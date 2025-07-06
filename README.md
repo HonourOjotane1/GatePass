@@ -11,7 +11,7 @@ GatePass replaces outdated guest list systems like spreadsheets, notepads, and p
 - Event creation and guest list upload
 - Secure RSVP with unique ID/QR generation
 - Real-time check-in by access control personnel
-- Guest search by name or ID
+- Guest search by name, QR code or ID
 - Admin dashboard for live stats and attendance tracking
 - Role tagging (VIP, Media, Staff, etc.)
 - Offline check-in support (future)
