@@ -1,21 +1,29 @@
 from pydantic import BaseModel, EmailStr
+from uuid import UUID
 
 
 class UserBase(BaseModel):
+    username: str
+    hashed_password: str
     first_name: str
     last_name: str
     email: EmailStr
     phone_number: int
+    # is_adult : Default = False
+    # gender: male or female
 
 
-class UserRegisterCreate(UserBase):
+class User(UserBase):
+    id: UUID
+
+
+class UserCreate(UserBase):
     pass
 
 
-class UserUpdate(UserRegisterCreate):
+class UserUpdate(UserBase):
     pass
 
 
-class UserDelete(UserRegisterCreate):
+class UserDelete(UserBase):
     pass
-
