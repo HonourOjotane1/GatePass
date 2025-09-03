@@ -21,9 +21,14 @@ class UserCreate(UserBase):
     pass
 
 
-class UserUpdate(UserBase):
-    pass
+class UserUpdate(User):
+    username: str
+    hashed_password: str
+    first_name: str
+    last_name: str
+    email: EmailStr
+    phone_number: int
 
 
-class UserDelete(UserBase):
+class UserDelete(User):
     pass

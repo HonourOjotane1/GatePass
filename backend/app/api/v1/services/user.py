@@ -13,3 +13,5 @@ class UserCrud:
         new_user = User(id=len(UserCrud.get_user()) + 1, **user.model_dump())
         user.append(new_user)
         return new_user
+
+user_crud = UserCrud()
