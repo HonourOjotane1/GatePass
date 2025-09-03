@@ -20,6 +20,7 @@ class EventBase(BaseModel):
 class Event(EventBase):
     id: UUID
 
+
 class EventCreate(EventBase):
     pass
 
@@ -27,11 +28,12 @@ class EventCreate(EventBase):
 class EventUpdate(Event):
     event_name: str
     available_seats: int
-    is_full: bool(Default=False)
+    is_full: bool = False
     schedule: datetime
-    is_valid: bool(Default=True)
+    is_valid: bool = True
     created_at: Timestamp
     updated_at: Timestamp
 
-class EventDelete()
+
+class EventDelete:
     id: UUID
