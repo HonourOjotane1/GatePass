@@ -1,6 +1,6 @@
 from typing import Optional, bool
 from uuid import UUID
-from pydantic import BaseModel, Timestamp
+from pydantic import BaseModel, Field
 from datetime import datetime
 
 
@@ -10,11 +10,11 @@ class EventBase(BaseModel):
     organizer_id: UUID
     description: str = Optional
     available_seats: int
-    is_full: bool = False
+    is_full: bool = Field(default=False)
     schedule: datetime
-    is_valid: bool = True
-    created_at: Timestamp
-    updated_at: Timestamp
+    is_valid: bool = Field(default=True)
+    created_at: datetime
+    updated_at: datetime
 
 
 class Event(EventBase):
@@ -28,11 +28,11 @@ class EventCreate(EventBase):
 class EventUpdate(Event):
     event_name: str
     available_seats: int
-    is_full: bool = False
+    is_full: bool = Field(default=False)
     schedule: datetime
-    is_valid: bool = True
-    created_at: Timestamp
-    updated_at: Timestamp
+    is_valid: bool = Field(default=True)
+    created_at: datetime
+    updated_at: datetime
 
 
 class EventDelete:

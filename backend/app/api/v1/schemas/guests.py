@@ -1,5 +1,6 @@
 from uuid import UUID
-from pydantic import BaseModel, EmailStr, Timestamp
+from pydantic import BaseModel, EmailStr, Field
+from datetime import datetime
 
 
 class GuestBase(BaseModel):
@@ -7,10 +8,10 @@ class GuestBase(BaseModel):
     full_name: str
     email: EmailStr
     status: str
-    is_verified: bool = False
-    is_checked_in: False
-    created_at: Timestamp
-    updated_at: Timestamp
+    is_verified: bool = Field(default=False)
+    is_checked_in: bool = Field(default=False)
+    created_at: datetime
+    updated_at: datetime
 
 
 class Guest(GuestBase):
@@ -26,10 +27,10 @@ class GuestUpdate(Guest):
     full_name: str
     email: EmailStr
     status: str
-    is_verified: bool = False
-    is_checked_in: False
-    created_at: Timestamp
-    updated_at: Timestamp
+    is_verified: bool = Field(default=False)
+    is_checked_in: bool = Field(default=False)
+    created_at: datetime
+    updated_at: datetime
 
 
 class GuestDelete(Guest):
