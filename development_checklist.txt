@@ -1,0 +1,107 @@
+=========================
+GATEPASS MVP DEVELOPMENT CHECKLIST
+=========================
+
+=======================================
+BACKEND (FastAPI - Python)
+=======================================
+
+[ ] Set up virtual environment and install FastAPI + dependencies
+    - fastapi, uvicorn, SQLAlchemy, alembic, python-dotenv, pydantic, etc.
+
+[ ] Configure project structure
+    - app/
+      ├── api/
+      │   └── v1/
+      │       └── endpoints/
+      ├── core/
+      ├── db/
+      ├── test/
+      └── main.py
+
+[ ] Create configuration settings
+    - Environment variables
+    - Database URL and JWT secrets
+
+[ ] Set up database models (SQLAlchemy)
+    - User (Guest)
+    - Event
+    - RSVP
+    - CheckIn
+
+[ ] Create Pydantic schemas for data validation
+
+[ ] Set up CRUD operations
+    - Create/Read/Update/Delete Guests
+    - Event creation & guest list import
+    - RSVP confirmation (with unique ID)
+    - Check-in status updates
+
+[ ] Build API routes
+    - POST /events/
+    - GET /events/{event_id}
+    - POST /events/{event_id}/guests
+    - POST /rsvp/confirm
+    - GET /checkin?event_id=XXX&guest_id=YYY
+
+[ ] Add JWT-based authentication (if needed)
+
+[ ] Generate unique ID or QR code on RSVP confirmation
+
+[ ] Implement check-in endpoint for staff to verify and mark guest as checked in
+
+[ ] Set up Alembic for database migrations
+
+[ ] Create unit tests (pytest)
+
+[ ] Enable CORS for frontend integration
+
+=======================================
+FRONTEND (React or Flutter)
+=======================================
+
+[ ] Initialize frontend project (React/Vite or Flutter)
+
+[ ] Set up folder structure
+    - src/
+      ├── components/
+      ├── pages/
+      ├── services/
+      └── utils/
+
+[ ] Build RSVP Page (Guest)
+    - Form: Name, Email, Phone
+    - On submit: send RSVP request, display unique ID or QR
+
+[ ] Build Organizer Dashboard
+    - Create event
+    - Upload guest list (CSV or form)
+    - View event details & RSVPs
+    - Copy event RSVP link
+
+[ ] Build Check-In Portal
+    - Search guest by name or ID
+    - QR Code scanner (if implemented)
+    - Show check-in status and allow check-in
+
+[ ] Connect frontend to FastAPI backend
+    - Axios or fetch calls to REST endpoints
+
+[ ] Handle loading states and error messages
+
+[ ] Add basic responsiveness (mobile-first design)
+
+[ ] Add basic styling (TailwindCSS, Chakra UI, or custom CSS)
+
+[ ] Test all flows: RSVP, Event creation, Check-in
+
+=======================================
+GENERAL / FINAL SETUP
+=======================================
+
+[ ] Add `.gitignore` file
+[ ] Set up `.env` files for secrets (backend & frontend)
+[ ] Create README.md
+[ ] Optional: Add logging, error tracking, or analytics
+[ ] Deploy backend (e.g., Railway, Render, or Fly.io)
+[ ] Deploy frontend (e.g., Vercel, Netlify, Firebase)
