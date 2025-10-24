@@ -1,0 +1,225 @@
+=========================
+GATEPASS MVP DEVELOPMENT CHECKLIST
+=========================
+
+=======================================
+BACKEND (FastAPI - Python)
+=======================================
+
+[ ] Set up virtual environment and install dependencies:
+    - fastapi, uvicorn, SQLAlchemy, alembic, python-dotenv, pydantic, passlib, qrcode, boto3 (or cloud storage SDK), etc.
+
+[ ] Configure project structure:
+    - app/
+      ├── api/
+      │   └── v1/
+      │       └── endpoints/
+      ├── core/
+      ├── db/
+      ├── models/
+      ├── schemas/
+      ├── services/
+      ├── utils/
+      ├── test/
+      └── main.py
+
+[ ] Environment setup:
+    - Create .env file for secrets (JWT, DB_URL, SMTP credentials)
+    - Set up database connection in SQLAlchemy
+    - Configure CORS middleware
+
+---------------------------
+EVENT CREATION MODULE
+---------------------------
+[ ] Models:
+    - Event (id, name, description, type, category, cover_image, start_time, end_time, venue, is_virtual, address, map_coordinates, created_by)
+    - TicketTier (id, event_id, name, price, quantity, description)
+    - AccessControl (id, event_id, access_type, qr_enabled, invite_only)
+    - Branding (id, event_id, theme_color, logo, banner, email_template)
+
+[ ] Endpoints:
+    - POST /events/ → Create event (multi-step form)
+    - PATCH /events/{id} → Update step-by-step data (autosave)
+    - GET /events/{id} → Get event details
+    - GET /events/organizer → Fetch all organizer’s events
+    - POST /events/upload-image → Handle image uploads with validation (max 5MB)
+
+[ ] Logic:
+    - Validate date/time order
+    - Handle “Virtual Event” toggle
+    - Auto-save draft progress per step
+    - Auto-generate unique event slug and link
+
+---------------------------
+TICKETING & ACCESS CONTROL MODULE
+---------------------------
+[ ] Models:
+    - TicketTier (linked to Event)
+    - QRPass (id, guest_id, event_id, qr_code, is_valid, created_at)
+    - ZoneAccess (optional future use)
+
+[ ] Endpoints:
+    - POST /events/{id}/tickets → Create/update ticket tiers
+    - POST /events/{id}/access → Configure access control
+    - GET /events/{id}/tickets → Retrieve ticket structure
+    - Generate QR codes automatically for confirmed guests
+
+---------------------------
+GUEST MANAGEMENT & RSVP MODULE
+---------------------------
+[ ] Models:
+    - Guest (id, full_name, email, phone, company, role, invitation_type, notes)
+    - RSVP (guest_id, event_id, status, response_timestamp, plus_one, dietary_pref)
+    - Invitation (id, guest_id, event_id, rsvp_link, sent_status, delivery_method)
+
+[ ] Endpoints:
+    - POST /guests/upload → CSV/Excel upload with validation
+    - POST /guests/manual → Add single guest
+    - GET /guests/{event_id} → Retrieve guest list
+    - POST /rsvp/confirm → Confirm RSVP (unique per guest)
+    - GET /rsvp/status/{event_id} → Track RSVP analytics
+    - POST /invitations/send → Send via Email/SMS
+    - POST /invitations/remind → Send reminder (24hr limit)
+
+[ ] Logic:
+    - Duplicate detection for email/phone
+    - Validate imported files before saving
+    - Generate unique RSVP links
+    - Log all invitation deliveries
+    - Auto-update RSVP dashboard in real-time (WebSocket or polling)
+
+---------------------------
+CHECK-IN & ATTENDANCE MODULE
+---------------------------
+[ ] Models:
+    - CheckIn (id, guest_id, event_id, timestamp, checked_in_by, status)
+    - DeviceLog (id, staff_user, event_id, device_id, action_log)
+
+[ ] Endpoints:
+    - POST /checkin/scan → Validate QR code or guest ID
+    - GET /checkin/dashboard → Real-time stats (checked-in vs total)
+    - POST /checkin/manual → Manual check-in fallback
+    - GET /checkin/logs → Retrieve check-in logs
+
+[ ] Logic:
+    - Prevent duplicate check-ins
+    - Support offline mode (queue unsynced check-ins)
+    - Log all alerts and unusual activities
+    - Generate post-event attendance summary (CSV/PDF export)
+
+---------------------------
+COMMUNICATION MODULE
+---------------------------
+[ ] Endpoints:
+    - POST /communication/send → Send updates or thank-you messages
+    - GET /communication/history/{guest_id} → Message log
+    - Support message templates and bulk sends
+
+---------------------------
+REPORTS & ANALYTICS
+---------------------------
+[ ] Endpoints:
+    - GET /reports/rsvp/{event_id}
+    - GET /reports/attendance/{event_id}
+    - GET /reports/segments/{event_id}
+    - Export as CSV/PDF
+
+---------------------------
+TESTING
+---------------------------
+[ ] Write pytest unit and integration tests for all modules
+[ ] Test image uploads, RSVPs, QR scans, and invitations
+[ ] Mock email/SMS sending services
+
+=======================================
+FRONTEND (React or Flutter)
+=======================================
+
+[ ] Initialize project (Vite + React + Tailwind or Flutter)
+[ ] Create project structure:
+    - src/
+      ├── components/
+      ├── pages/
+      ├── hooks/
+      ├── services/
+      ├── context/
+      └── utils/
+
+---------------------------
+EVENT CREATION FLOW
+---------------------------
+[ ] Step 1 – Basic Information
+    - Form inputs (name, description, type, category, image upload)
+    - Progress bar
+    - Validation for required fields and image size
+    - Auto-save draft
+[ ] Step 2 – Date, Time & Venue
+    - Date/time pickers
+    - Venue field with Google Maps API
+    - “Virtual Event” toggle
+    - Validation (end time > start time)
+[ ] Step 3 – Ticketing & Access Type
+    - Dynamic ticket tier builder
+    - Access type selector
+    - QR code toggle
+    - Ticket summary card
+[ ] Step 4 – Guest Management & RSVP
+    - Upload guest list (CSV/Excel)
+    - Guest preview table with filters
+    - RSVP toggle and message customization
+    - Plus-one and dietary preference fields
+[ ] Step 5 – Branding & Customization
+    - Theme color picker & logo upload
+    - Email/invite preview
+    - Reset to default option
+[ ] Step 6 – Review & Publish
+    - Summary page of all data
+    - “Edit” per section
+    - Publish button → confirmation toast + redirect
+
+---------------------------
+RSVP & GUEST MANAGEMENT
+---------------------------
+[ ] Guest list upload with inline validation
+[ ] Invitation template editor + live preview
+[ ] Email/SMS scheduling UI
+[ ] RSVP status dashboard (Accepted / Declined / Pending)
+[ ] Segmentation filters (VIP, Staff, Sponsors)
+[ ] Send reminders & follow-up messages
+
+---------------------------
+ACCESS CONTROL & CHECK-IN
+---------------------------
+[ ] Staff check-in dashboard
+[ ] QR scanner integration (camera access)
+[ ] Guest details modal after scan
+[ ] Duplicate/invalid scan feedback
+[ ] Manual lookup option
+[ ] Live check-in counter + charts
+[ ] Alerts & notifications (invalid pass, duplicates)
+[ ] Post-event report page (attendance summary + export)
+
+---------------------------
+GENERAL FRONTEND TASKS
+---------------------------
+[ ] Integrate all API endpoints
+[ ] Global state management (Redux or Context API)
+[ ] Handle auth (if needed)
+[ ] Error handling + toasts
+[ ] Responsive design across all pages
+[ ] Loading and success animations
+[ ] Light & dark mode support
+
+=======================================
+GENERAL / FINAL SETUP
+=======================================
+
+[ ] Add `.gitignore`
+[ ] Add `.env` files (for both backend and frontend)
+[ ] Configure deployment pipeline
+    - Backend → Render/Railway/Fly.io
+    - Frontend → Vercel/Netlify
+[ ] Test all user journeys end-to-end
+[ ] Create README.md
+[ ] Add logging and monitoring
+[ ] Prepare MVP demo dataset
