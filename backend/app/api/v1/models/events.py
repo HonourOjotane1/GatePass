@@ -75,7 +75,7 @@ class Branding:
     id = Column(UUID, Primary_key=True)
     event_id = Column(UUID, Foreign_key=True)
     theme_color = Column(str)
-    logo = Column(str)  # canh bge file_name or image url
+    logo = Column(str)  # can be file_name or image url
     banner = Column(str)  # can be file_name or image url
     email_template = Column(str)
 
