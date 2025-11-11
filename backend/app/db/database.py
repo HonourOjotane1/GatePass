@@ -4,6 +4,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy import text
 from dotenv import load_dotenv
 import os
+
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -19,14 +20,16 @@ engine = create_engine(
 sessionlocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-
 Base = declarative_base()
+
+
 def get_db():
     db = sessionlocal()
     try:
         yield db
     finally:
         db.close()
+
 
 # db = sessionlocal()
 # db.execute(text('SELECT 1'))
