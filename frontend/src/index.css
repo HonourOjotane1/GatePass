@@ -1,27 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+
+@import url('https://fonts.googleapis.com/css2?family=Red+Hat+Display:ital,wght@0,300..900;1,300..900&display=swap');
+
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap');
+
+
 @import "tailwindcss";
 
 
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
 
+:root {
   /* color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
   background-color: #242424; */
-
-  /* background-color: #f9fafb; */
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
   /* max-width: 1280px;
   margin: 0 auto;
   padding: 2rem; */
 }
 
-/* html{
-  background-color: #f9fafb;
-} */
+.font-poppins {
+  font-family: "Poppins", sans-serif;
+  font-style: normal;
+}
+
+.font-manrope {
+  font-family: "Manrope", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+
+.font-red-hat-display {
+  font-family: "Red Hat Display", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
 
 *{
   box-sizing: border-box;
@@ -29,9 +46,18 @@
   /* padding: 0; */
 }
 
-/* #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-} */
+.bg-color{
+  background-color: #6B4EFF;
+}
+
+.yellow{
+  color: #FFB547;
+}
+
+.green{
+  color: #3BE8B0;
+}
+
+.black{
+  color: #3BE8B0;
+}
