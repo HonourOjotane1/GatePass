@@ -1,6 +1,7 @@
 import signupimage from "../assets/Signup-image.png";
 import logowhite from "../assets/Logo-white.svg";
-import { Eye } from 'lucide-react'
+import { Eye } from "lucide-react";
+import { Link } from "react-router";
 
 const Signup = () => {
   return (
@@ -80,7 +81,7 @@ const Signup = () => {
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:text-[#6B4EFF] focus:outline-none"
                 />
                 <span className="absolute right-3 top-3 text-gray-400 cursor-pointer">
-                   <Eye />
+                  <Eye />
                 </span>
               </div>
               <p className="text-xs text-[#8F8F8F] mt-1">
@@ -120,22 +121,24 @@ const Signup = () => {
               </label>
             </div>
 
-            <button
-              type="submit"
-              className="w-full bg-[#6B4EFF] hover:bg-indigo-700 cursor-pointer text-white py-3 rounded-lg font-semibold shadow-lg transition"
-            >
-              Continue
-            </button>
+            <Link to="/otp">
+              <button
+                type="submit"
+                className="w-full bg-[#6B4EFF] hover:bg-indigo-700 cursor-pointer text-white py-3 rounded-lg font-semibold shadow-lg transition"
+              >
+                Continue
+              </button>
+            </Link>
           </form>
 
           <p className="text-sm text-gray-600 text-center mt-6">
             Already have an account?{" "}
-            <a
-              href="#"
+            <Link
+              to="/login"
               className="text-[#6B4EFF] font-semibold hover:underline"
             >
               Login
-            </a>
+            </Link>
           </p>
         </div>
       </div>

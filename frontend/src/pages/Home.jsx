@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router";
 
 const Home = () => {
   return (
@@ -22,9 +23,9 @@ const Home = () => {
           <a href="#contact" className="hover:text-gray-900">
             Contact
           </a>
-          <button className="ml-4 px-4 py-2 rounded-md bg-blue-600 text-white font-medium shadow">
+          <Link to="/signup" className="ml-4 px-4 py-2 rounded-md bg-blue-600 text-white font-medium shadow cursor-pointer">
             Get Started
-          </button>
+          </Link>
         </nav>
 
         {/* Mobile menu button */}
@@ -54,9 +55,9 @@ const Home = () => {
             </p>
 
             <div className="mt-8 flex gap-4">
-              <button className="px-6 py-3 rounded-2xl bg-blue-600 text-white font-semibold shadow-lg">
+              <Link to="/signup" className="px-6 py-3 rounded-2xl bg-blue-600 text-white font-semibold shadow-lg">
                 Get Started
-              </button>
+              </Link>
               <a
                 href="#demo"
                 className="px-6 py-3 rounded-2xl border border-gray-200 text-gray-700"

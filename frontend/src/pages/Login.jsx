@@ -1,6 +1,7 @@
 import signupimage from "../assets/Signup-image.png";
 import logowhite from "../assets/Logo-white.svg";
-import { Eye } from 'lucide-react'
+import { Eye } from "lucide-react";
+import { Link } from "react-router";
 
 const Login = () => {
   return (
@@ -11,11 +12,10 @@ const Login = () => {
           <img src={logowhite} alt="GatePass" />
         </div>
         <div className="w-full max-w-11/12 self-center">
-          <h1 className="text-3xl md:text-4xl font-bold mb-8">
-            Welcome Back
-          </h1>
+          <h1 className="text-3xl md:text-4xl font-bold mb-8">Welcome Back</h1>
           <p className="text-lg text-white mb-10 max-w-sm">
-Login to your account to seamlessly manage your event          </p>
+            Login to your account to seamlessly manage your event{" "}
+          </p>
 
           {/* Image mockup */}
           <div className="rounded-2xl overflow-hidden shadow-lg relative border mt-22">
@@ -46,7 +46,6 @@ Login to your account to seamlessly manage your event          </p>
 
           {/* Signup Form */}
           <form className="space-y-5">
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Email Address
@@ -57,7 +56,6 @@ Login to your account to seamlessly manage your event          </p>
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:outline-[#6B4EFF] focus:outline-none"
               />
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Password
@@ -73,29 +71,29 @@ Login to your account to seamlessly manage your event          </p>
                 </span>
               </div>
             </div>
-
             <div className="flex items-start justify-right gap-2 w-full">
-                <a href="#" className="text-[#6B4EFF] font-bold">
-                  Forgot Password
-                </a>
+              <a href="#" className="text-[#6B4EFF] font-bold">
+                Forgot Password
+              </a>
             </div>
-
-            <button
-              type="submit"
-              className="w-full bg-[#6B4EFF] hover:bg-indigo-700 cursor-pointer text-white py-3 rounded-lg font-semibold shadow-lg transition"
-            >
-              Continue
-            </button>
+            <Link>
+              <button
+                type="submit"
+                className="w-full bg-[#6B4EFF] hover:bg-indigo-700 cursor-pointer text-white py-3 rounded-lg font-semibold shadow-lg transition"
+              >
+                Continue
+              </button>
+            </Link>
           </form>
 
           <p className="text-sm text-gray-600 text-center mt-6">
             Don't have an account yet?{" "}
-            <a
-              href="#"
+            <Link
+              to="/signup"
               className="text-[#6B4EFF] font-semibold hover:underline"
             >
               Sign Up
-            </a>
+            </Link>
           </p>
         </div>
       </div>
