@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCheck } from 'lucide-react';
 import logopurple from "../assets/Logo-purple.svg";
+import { Link } from 'react-router';
 
 
 const Verificationsuccessful = () => {
@@ -72,9 +73,11 @@ const Verificationsuccessful = () => {
           </div>
 
           {/* Dashboard Button */}
+          <Link to="/dashboard">
           <button className="w-full bg-[#6B4EFF] hover:bg-[#5a3ee6] active:bg-[#4d35c9] text-white font-semibold py-4 rounded-xl transition-colors duration-200 text-base md:text-lg">
             Go to Dashboard
           </button>
+          </Link>
         </div>
       </div>
     </div>
