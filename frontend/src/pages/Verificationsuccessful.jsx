@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCheck } from 'lucide-react';
 import logopurple from "../assets/Logo-purple.svg";
-import { Link } from 'react-router';
+import { Link, Navigate, useNavigate } from 'react-router';
 
 
 const Verificationsuccessful = () => {
 
     const [countdown, setCountdown] = useState(5);
   const [progress, setProgress] = useState(0);
+  const navigate = useNavigate()
 
   // Countdown and progress animation
   useEffect(() => {
@@ -24,6 +25,14 @@ const Verificationsuccessful = () => {
 
     return () => clearInterval(timer);
   }, []);
+
+    // Navigate when countdown reaches 0
+  useEffect(() => {
+    if (countdown === 0) {
+      navigate('/dashboard')
+    }
+  }, [countdown])
+
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-poppins">
