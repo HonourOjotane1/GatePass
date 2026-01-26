@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react'
 import { Mail } from 'lucide-react'
-import logopurple from "../assets/Logo-purple.svg"
+import logopurple from "../../assets/Logo-purple.svg"
 
 const Magiclink = () => {
    const [email] = useState('youremail@gmail.com');
