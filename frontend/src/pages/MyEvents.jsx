@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Search, ArrowLeft } from "lucide-react";
-import { Link } from "react-router";
+import { NavLink, Link } from "react-router";
 
 import techSummitImg from "../assets/tech-summit.png";
 import healthTechImg from "../assets/healthtech.png";
@@ -115,12 +115,12 @@ const MyEvents = () => {
         </div>
 
         <div className="flex items-center gap-6">
-          <Link
+          <NavLink
             to="/dashboard/create-event"
             className="bg-[#6B4EFF] text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-[#5a3ee6] transition-colors"
           >
             Create Event
-          </Link>
+          </NavLink>
         </div>
       </header>
 
@@ -205,12 +205,12 @@ function EventCard({ event }) {
       </div>
 
       {/* View Details Button */}
-      <Link
+      <NavLink
         to={`/dashboard/event/${event.id}`}
         className="border-2 border-[#6B4EFF] text-[#6B4EFF] px-8 py-3 rounded-xl font-semibold hover:bg-[#6B4EFF] hover:text-white transition-colors"
       >
         View Details
-      </Link>
+      </NavLink>
     </div>
   );
 }
