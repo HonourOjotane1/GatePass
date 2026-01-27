@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import logopurple from "../assets/Logo-purple.svg";
+import logopurple from "../../assets/Logo-purple.svg";
 import { Link } from "react-router";
 
 const Otp = () => {
@@ -83,7 +83,7 @@ const Otp = () => {
         </div>
 
         {/* Verify Button */}
-        <Link to="/verificationsuccessfull">
+        <Link to="/verification-success">
         <button className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 rounded-lg transition cursor-pointer">
           Verify
         </button>

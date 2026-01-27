@@ -1,5 +1,5 @@
-import signupimage from "../assets/Signup-image.png";
-import logowhite from "../assets/Logo-white.svg";
+import signupimage from "../../assets/Signup-image.png";
+import logowhite from "../../assets/Logo-white.svg";
 import { Eye } from "lucide-react";
 import { Link } from "react-router";
 
