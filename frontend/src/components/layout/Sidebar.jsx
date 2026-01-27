@@ -1,4 +1,4 @@
-import { NavLink } from "react-router";
+import { NavLink, Link } from "react-router";
 import logopurple from "../../assets/Logo-purple.svg";
 import {
   LayoutDashboard,
@@ -26,7 +26,7 @@ const Sidebar = () => {
   return (
     <aside className="w-64 bg-white shadow flex flex-col shrink-0 z-50 font-poppins">
       <NavLink to="/">
-        <div className="p-8 flex items-center gap-3">
+        <div className="p-8 flex items-center gap-3 cursor-pointer">
           <div className="w-8 h-8 flex items-center justify-center">
             <img src={logopurple} alt="GatePass" />
           </div>
@@ -43,7 +43,7 @@ const Sidebar = () => {
             to={item.path}
             end={item.path === "/dashboard"}
             className={({ isActive }) =>
-              `w-full flex items-center gap-3 px-4 py-3.5 transition-all ${
+              `w-full flex items-center gap-3 px-4 py-3.5 transition-all cursor-pointer ${
                 isActive
                   ? "bg-[#6B4EFF]/5 text-[#6B4EFF] font-bold border-l-4 border-[#6B4EFF]"
                   : "text-slate-400 hover:text-slate-600 hover:bg-gray-50 font-semibold"
@@ -59,7 +59,7 @@ const Sidebar = () => {
       <div className="p-6">
         <NavLink
           to="/dashboard/create-event"
-          className="block w-full bg-[#6B4EFF] text-white py-3.5 rounded-xl font-semibold shadow-lg shadow-[#6B4EFF]/20 text-center"
+          className="block w-full bg-[#6B4EFF] text-white py-3.5 rounded-xl font-semibold shadow-lg shadow-[#6B4EFF]/20 text-center cursor-pointer"
         >
           Create Event
         </NavLink>

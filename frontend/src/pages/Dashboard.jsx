@@ -383,7 +383,7 @@ import {
   ChevronDown,
   TimerIcon,
 } from "lucide-react";
-import { Link } from "react-router";
+import {NavLink, Link } from "react-router";
 
 const Dashboard = () => {
   return (
@@ -551,9 +551,9 @@ const Dashboard = () => {
                   Here are your upcoming events
                 </p>
               </div>
-              <Link to="create-event" className="bg-[#6B4EFF] text-white px-5 py-2.5 rounded-xl text-xs font-bold cursor-pointer">
+              <NavLink to="create-event" className="bg-[#6B4EFF] text-white px-5 py-2.5 rounded-xl text-xs font-bold cursor-pointer">
                 Create Event
-              </Link>
+              </NavLink>
             </div>
 
             <div className="divide-y divide-slate-50">
