@@ -1,6 +1,6 @@
 import { createBrowserRouter } from "react-router";
 import DashboardLayout from "../components/layout/DashboardLayout";
-import Verificationsuccess from "../pages/auth/Verificationsuccess";
+import VerificationSuccess from "../pages/auth/VerificationSuccess";
 import Dashboard from "../pages/Dashboard";
 import MyEvents from "../pages/MyEvents";
 import CreateEvent from "../pages/CreateEvent";
@@ -39,7 +39,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/verification-success",
-    element: <Verificationsuccess />,
+    element: <VerificationSuccess />,
   },
   {
     path: "/dashboard",

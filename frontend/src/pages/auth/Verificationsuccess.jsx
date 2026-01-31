@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { CheckCheck } from 'lucide-react';
 import logopurple from "../../assets/Logo-purple.svg";
 import { Link, Navigate, useNavigate } from 'react-router';

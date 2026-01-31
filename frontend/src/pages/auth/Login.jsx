@@ -1,7 +1,7 @@
 import signupimage from "../../assets/Signup-image.png";
 import logowhite from "../../assets/Logo-white.svg";
 import { Eye } from "lucide-react";
-import { Link } from "react-router";
+import { Link, NavLink } from "react-router";
 
 const Login = () => {
   return (
@@ -76,14 +76,14 @@ const Login = () => {
                 Forgot Password
               </a>
             </div>
-            <Link>
+            <NavLink to="/dashboard">
               <button
                 type="submit"
                 className="w-full bg-[#6B4EFF] hover:bg-indigo-700 cursor-pointer text-white py-3 rounded-lg font-semibold shadow-lg transition"
               >
                 Continue
               </button>
-            </Link>
+            </NavLink>
           </form>
 
           <p className="text-sm text-gray-600 text-center mt-6">
