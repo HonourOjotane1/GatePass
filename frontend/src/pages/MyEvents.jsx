@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Search, ArrowLeft } from "lucide-react";
-import { NavLink, Link } from "react-router";
+import { NavLink, Link } from "react-router-dom";
 
 import techSummitImg from "../assets/tech-summit.png";
 import healthTechImg from "../assets/healthtech.png";

@@ -1,4 +1,4 @@
-import { Link } from 'react-router'
+import { Link } from 'react-router-dom'
 import SuccessIcon from '../assets/icons/success-badge.svg'
 
 const EventSuccess = () => {

@@ -1,7 +1,7 @@
 import signupimage from "../../assets/Signup-image.png";
 import logowhite from "../../assets/Logo-white.svg";
 import { Eye } from "lucide-react";
-import { Link, NavLink } from "react-router";
+import { Link, NavLink } from "react-router-dom";
 
 const Login = () => {
   return (

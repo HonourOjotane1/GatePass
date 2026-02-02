@@ -5,7 +5,7 @@ import {
   Upload, 
   Calendar
 } from 'lucide-react';
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom';
 import EventSuccess from '../components/EventSuccess'; 
 
 const CreateEvent = () => {

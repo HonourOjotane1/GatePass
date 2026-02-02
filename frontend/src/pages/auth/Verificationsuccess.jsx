@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { CheckCheck } from 'lucide-react';
 import logopurple from "../../assets/Logo-purple.svg";
-import { Link, Navigate, useNavigate } from 'react-router';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 
 
 const Verificationsuccessful = () => {

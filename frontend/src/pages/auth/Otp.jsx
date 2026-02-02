@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import logopurple from "../../assets/Logo-purple.svg";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 
 const Otp = () => {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
