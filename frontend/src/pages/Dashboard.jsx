@@ -383,7 +383,7 @@ import {
   ChevronDown,
   TimerIcon,
 } from "lucide-react";
-import {NavLink, Link } from "react-router";
+import {NavLink, Link } from "react-router-dom";
 
 const Dashboard = () => {
   return (

@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, useRouteError } from "react-router-dom";
 import DashboardLayout from "../components/layout/DashboardLayout";
 import VerificationSuccess from "../pages/auth/VerificationSuccess";
 import Dashboard from "../pages/Dashboard";
@@ -11,15 +11,31 @@ import Settings from "../pages/Settings";
 import Login from "../pages/auth/Login";
 import Otp from "../pages/auth/Otp";
 import Signup from "../pages/auth/Signup";
-import Magiclink from "../pages/auth/MagicLink";
+import MagicLink from "../pages/auth/MagicLink";
 import Home from "../pages/Home";
 import EventDetails from "../pages/EventDetails";
+// import ErrorPage from "../pages/ErrorPage";
+
+
+function ErrorHandler() {
+  const error = useRouteError();
+  console.error(error);
+  return (
+    <div className="p-10 text-center">
+      <h1 className="text-3xl font-bold text-red-500">Oops!</h1>
+      <p className="mt-4">Sorry, an unexpected error has occurred.</p>
+      <p className="mt-2 text-slate-500">
+        <i>{error.statusText || error.message}</i>
+      </p>
+    </div>
+  );
+}
 
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <Home />
-    // errorElement: <ErrorPage />,
+    element: <Home />,
+    errorElement: <ErrorHandler />,
   },
   {
     path: "/login",
@@ -31,7 +47,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/magic-link",
-    element: <Magiclink />,
+    element: <MagicLink />,
   },
   {
     path: "/otp",
@@ -44,6 +60,7 @@ export const router = createBrowserRouter([
   {
     path: "/dashboard",
     element: <DashboardLayout />,
+    errorElement: <ErrorHandler />,
     children: [
       {
         index: true,

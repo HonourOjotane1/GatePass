@@ -1,4 +1,4 @@
-import { NavLink, Link } from "react-router";
+import { NavLink, Link } from "react-router-dom";
 import logopurple from "../../assets/Logo-purple.svg";
 import {
   LayoutDashboard,
