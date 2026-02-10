@@ -11,7 +11,7 @@ import Settings from "../pages/Settings";
 import Login from "../pages/auth/Login";
 import Otp from "../pages/auth/Otp";
 import Signup from "../pages/auth/Signup";
-import MagicLink from "../pages/auth/MagicLink";
+// import MagicLink from "../pages/auth/MagicLink";
 import Home from "../pages/Home";
 import EventDetails from "../pages/EventDetails";
 // import ErrorPage from "../pages/ErrorPage";
@@ -45,10 +45,10 @@ export const router = createBrowserRouter([
     path: "/signup",
     element: <Signup />,
   },
-  {
-    path: "/magic-link",
-    element: <MagicLink />,
-  },
+  // {
+  //   path: "/magic-link",
+  //   element: <MagicLink />,
+  // },
   {
     path: "/otp",
     element: <Otp />,
