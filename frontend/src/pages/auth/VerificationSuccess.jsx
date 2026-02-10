@@ -4,7 +4,7 @@ import logopurple from "../../assets/Logo-purple.svg";
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 
 
-const Verificationsuccessful = () => {
+const VerificationSuccessful = () => {
 
     const [countdown, setCountdown] = useState(5);
   const [progress, setProgress] = useState(0);
@@ -93,4 +93,4 @@ const Verificationsuccessful = () => {
   )
 }
 
-export default Verificationsuccessful
+export default VerificationSuccessful

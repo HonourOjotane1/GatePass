@@ -47,7 +47,7 @@ const Otp = () => {
     setTimer(59);
     setCanResend(false);
 
-    // TODO — Call your resend API here
+    // TODO — Call resend API here
     console.log("Code resent!");
   };
 
