@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import { Mail } from 'lucide-react'
 import logopurple from "../../assets/Logo-purple.svg"
 
-const Magiclink = () => {
+const MagicLink = () => {
    const [email] = useState('youremail@gmail.com');
 
   return (
@@ -61,4 +61,4 @@ const Magiclink = () => {
   );
 }
 
-export default Magiclink
+export default MagicLink
