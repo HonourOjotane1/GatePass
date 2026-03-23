@@ -46,18 +46,7 @@
   /* padding: 0; */
 }
 
-.bg-color{
-  background-color: #6B4EFF;
-}
-
-.yellow{
-  color: #FFB547;
-}
-
-.green{
-  color: #3BE8B0;
-}
-
-.black{
-  color: #3BE8B0;
+.hero-bg{
+background: #ffffff;
+background: linear-gradient(50deg, rgba(255, 255, 255, 1) 0%, rgba(239, 213, 255, 1) 62%, rgba(191, 54, 255, 1) 100%);
 }
