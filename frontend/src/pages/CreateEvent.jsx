@@ -157,7 +157,7 @@ const CreateEvent = () => {
             <div className="mt-16 flex justify-center gap-4">
                 <button 
                   onClick={prevStep}
-                  className="w-full max-w-md border-2 border-[#6B4EFF] text-[#6B4EFF] py-4 rounded-xl font-bold text-lg hover:bg-[#6B4EFF]/5 transition-all"
+                  className="w-full max-w-md border-2 border-[#6B4EFF] text-[#6B4EFF] py-4 rounded-xl font-bold text-lg hover:bg-[#6B4EFF]/5 cursor-pointer transition-all"
                 >
                   Previous
               </button>
@@ -166,8 +166,8 @@ const CreateEvent = () => {
                 disabled={!formData.accessType}
                 className={`w-full max-w-md py-4 rounded-xl font-bold text-lg transition-all ${
                   formData.accessType 
-                  ? 'bg-[#6B4EFF]/20 text-[#6B4EFF] hover:bg-[#6B4EFF] hover:text-white' 
-                  : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  ? 'text-white bg-[#6B4EFF] cursor-pointer' 
+                  : ' text-[#6B4EFF]/40 bg-[#6B4EFF]/20 cursor-not-allowed'
                 }`}
               >
                 Next
@@ -219,10 +219,13 @@ const Step1 = ({ form, update }) => (
             onChange={(e) => update('eventType', e.target.value)}
             className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white text-slate-600"
           >
-            <option value="">Select Type</option>
-            <option value="Seminar">Seminar</option>
-            <option value="Conference">Conference</option>
+            {/* <option value=""></option> */}
+            <option value="Corporate">Corporate</option>
+            <option value="Private">Private</option>
             <option value="Concert">Concert</option>
+            <option value="Seminar">Seminar</option>
+            <option value="Wedding">Wedding</option>
+            <option value="Others">Others</option>
           </select>
           <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={20} />
         </div>
@@ -464,7 +467,7 @@ const Step4 = ({ form, update }) => {
               placeholder="Enter email here"
               className="flex-1 px-4 py-3 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-300"
             />
-            <button className="bg-[#6B4EFF] text-white px-8 py-3 rounded-xl font-bold shadow-md hover:shadow-lg transition-all">
+            <button className="bg-[#6B4EFF] text-white px-8 py-3 rounded-xl font-bold shadow-md hover:shadow-lg cursor-pointer transition-all">
               Add Email
             </button>
           </div>
