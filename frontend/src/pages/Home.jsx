@@ -251,7 +251,7 @@ const Home = () => {
           />
         </div>
 
-        <div className="relative z-10 max-w-4xl mx-auto px-6 flex flex-col items-start gap-8 lg:gap-16 w-full">
+        <div className="relative z-10 max-w-7xl mx-auto px-6 flex flex-col items-start gap-8 lg:gap-16 w-full">
           <div className="flex-1">
             <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight">
               Discover Events <br />
@@ -327,8 +327,8 @@ const Home = () => {
       {/* --- FOOTER --- */}
       <footer className="bg-[#FDFDFF] py-8">
         <div className="max-w-7xl mx-auto px-6 lg:px-10 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-sm font-medium text-slate-500">
-            © {new Date().getFullYear()} GatePass — Made for better events
+          <p className="text-sm font-semibold text-slate-500">
+            © {new Date().getFullYear()} GatePass — The Better Way In
           </p>
           <div className="flex items-center gap-6 text-sm font-medium text-slate-500">
             <a href="#" className="hover:text-[#6B4EFF] transition-colors">
