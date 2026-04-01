@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from app.api.v1.services.user import UserCrud
-from app.api.v1.schemas.user import UserCreate
+from app.api.v1.schemas.user import UserBaseCreate
 
 user_router = APIRouter()
 
@@ -11,5 +11,5 @@ def get_users():
 
 
 @user_router.post("/register")
-def register(payload: UserCreate):
+def register(payload: UserBaseCreate):
     return {"message": "registration successful!", "data": UserCrud.register}

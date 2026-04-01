@@ -4,7 +4,6 @@ from uuid import UUID
 
 class UserBase(BaseModel):
     username: str
-    hashed_password: str
     first_name: str
     last_name: str
     email: EmailStr
@@ -17,8 +16,13 @@ class User(UserBase):
     id: UUID
 
 
-class UserCreate(UserBase):
-    pass
+class UserBaseCreate(UserBase):
+    password: str
+
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
 
 
 class UserUpdate(User):

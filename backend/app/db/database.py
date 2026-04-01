@@ -1,7 +1,5 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy import text
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.orm import declarative_base
 from dotenv import load_dotenv
 import os
 
@@ -14,21 +12,22 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 # )  # for postgresql
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL variable is not set.")
-engine = create_engine(
-    DATABASE_URL, echo=False  # , connect_args={"check_same_threads": False}
-)  # connect_args... is only used for sqlite.
-sessionlocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+engine = create_async_engine(
+    DATABASE_URL, echo=True)
+#     connect_args={"check_same_threads": False}
+# )  # connect_args... is only used for sqlite, echo=false isused for postgres
+AsyncSessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=engine, class_=AsyncSession, expire_on_commit=False)
 
 
 Base = declarative_base()
 
 
-def get_db():
-    db = sessionlocal()
-    try:
-        yield db
-    finally:
-        db.close()
+async def get_db():
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+        finally:
+            await session.close()
 
 
 # db = sessionlocal()

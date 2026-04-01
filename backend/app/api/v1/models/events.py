@@ -1,9 +1,9 @@
 from datetime import datetime
-from sqlalchemy.orm import declarativebase, relationship
+from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy import Column, integer, DateTime, ForeignKey
 from uuid import UUID
 
-Base = declarativebase()
+Base = declarative_base()
 
 
 class Events(Base):

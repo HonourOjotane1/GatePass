@@ -1,4 +1,5 @@
-from app.api.v1.schemas.user import User, UserCreate
+from app.api.v1.schemas.user import User, UserBaseCreate
+from app.core.security import hash_password
 
 users = []
 
@@ -9,9 +10,25 @@ class UserCrud:
         return users
 
     @staticmethod
-    def register(user: UserCreate):
-        new_user = User(id=len(UserCrud.get_user()) + 1, **user.model_dump())
-        user.append(new_user)
-        return new_user
+    def register(db, user: UserBaseCreate):
+        data = user.model_dump()
+
+        # hash the password BEFORE saving
+        data["hashed_password"] = hash_password(data["password"])
+        data.pop("password")
+        new_user = User(**data)
+        try:
+            db.add(new_user)
+            db.commit()
+            db.refresh(new_user)
+            return new_user
+        except Exception:
+            db.rollback()
+            raise
+
+    # existing_user = db.query(User).filter(User.email == data["email"]).first()
+    #     if existing_user:
+    #         raise ValueError("User already exists"
+   
 
 user_crud = UserCrud()

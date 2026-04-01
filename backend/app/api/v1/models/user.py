@@ -1,20 +1,20 @@
 from datetime import datetime
-from sqlalchemy.orm import declarativebase
-from sqlalchemy import DateTime, column, EmailStr, Timestamp
-from uuid import UUID
-
-Base = declarativebase()
+import uuid
+from sqlalchemy import DateTime, Column, String, Boolean
+from sqlalchemy.dialects.postgresql import UUID
+from app.db.database import Base
 
 
 class User(Base):
     __tablename__ = "organizers"
-    id = column(UUID(), primary_key=True)
-    username = column(str(50), nullable=False)
-    first_name = column(str(50))
-    last_name = column(str(50))
-    email = column(EmailStr)
-    is_verified = column(bool(Default=False))
-    is_logged_in = column(bool(Default=False))
-    hashed_password = column(str)
-    created_at = column(DateTime(timezone=True), Default=datetime.utcnow)
-    updated_at = column(DateTime(timezone=True), Default=datetime.utcnow, onupdate=datetime.utcnow)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    username = Column(String(50), nullable=True)
+    first_name = Column(String(50))
+    last_name = Column(String(50))
+    email = Column(String)
+    is_verified = Column(Boolean, default=False)
+    is_logged_in = Column(Boolean, default=False)
+    # password = Column(str, nullable=False)
+    hashed_password = Column(String, nullable=True) #nullable for magic-link users
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
