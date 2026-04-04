@@ -14,6 +14,7 @@ import Signup from "../pages/auth/Signup";
 // import MagicLink from "../pages/auth/MagicLink";
 import Home from "../pages/Home";
 import EventDetails from "../pages/EventDetails";
+import AddGuest from "../pages/AddGuest";
 // import ErrorPage from "../pages/ErrorPage";
 
 
@@ -81,6 +82,10 @@ export const router = createBrowserRouter([
       {
         path: "guest-management",
         element: <GuestManagement />,
+      },
+      {
+        path: "add-guest",
+        element: <AddGuest />,
       },
       {
         path: "analytics",
