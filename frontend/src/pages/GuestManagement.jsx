@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   Search, 
   ArrowLeft, 
@@ -14,6 +14,9 @@ import {
 import { NavLink, Link } from 'react-router-dom';
 import userAvatar from '../assets/user.png'; 
 import emptyStateImg from '../assets/guest-empty-state.svg'; 
+import FeedbackModal from '../components/FeedbackModal'
+import questionIcon from '../assets/icons/question-circle.svg'
+import successIcon from '../assets/icons/success-badge.svg'
 
 // --- Helper to Generate Random Mock Data ---
 const generateMockGuests = () => {
@@ -47,35 +50,33 @@ const generateMockGuests = () => {
 };
 
 const GuestManagement = () => {
-  // Toggle this state to see the empty vs filled versions
   const [isEmpty, setIsEmpty] = useState(false);
-  
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEvent, setSelectedEvent] = useState('All Events');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  
+  // NEW: State to manage which modal is currently open
+  const [modalState, setModalState] = useState(null); // 'removeConfirm' | 'removeSuccess' | 'resendConfirm' | 'resendSuccess' | null
+
   const itemsPerPage = 6;
 
   // Initialize mock data once
   const allGuests = useMemo(() => generateMockGuests(), []);
 
-  // Filter Data based on Selected Event, Search Term, and Empty State Toggle
+  // Filter Data
   const filteredGuests = useMemo(() => {
     if (isEmpty) return [];
-
     let filtered = allGuests;
-
     if (selectedEvent !== 'All Events') {
       filtered = filtered.filter(g => g.event === selectedEvent);
     }
-
     if (searchTerm) {
       filtered = filtered.filter(g => 
         g.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
         g.email.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-
     return filtered;
   }, [allGuests, selectedEvent, searchTerm, isEmpty]);
 
@@ -83,7 +84,6 @@ const GuestManagement = () => {
   const totalPages = Math.ceil(filteredGuests.length / itemsPerPage) || 1;
   const currentGuests = filteredGuests.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [selectedEvent, searchTerm, isEmpty]);
@@ -95,7 +95,6 @@ const GuestManagement = () => {
     "Creative Designers Meetup"
   ];
 
-  // Helper for Pagination Display
   const renderPaginationNumbers = () => {
     let pages = [];
     for (let i = 1; i <= totalPages; i++) {
@@ -120,8 +119,65 @@ const GuestManagement = () => {
     return pages;
   };
 
+  // --- MODAL RENDERING LOGIC ---
+  const renderModalContent = () => {
+    switch (modalState) {
+      case 'removeConfirm':
+        return (
+          <FeedbackModal 
+            icon={questionIcon}
+            title="Are you sure you want to remove this guest?"
+            buttons={[
+              { label: "Cancel", variant: "solid", onClick: () => setModalState(null) },
+              { label: "Remove", variant: "outline", onClick: () => setModalState('removeSuccess') }
+            ]}
+          />
+        );
+      case 'removeSuccess':
+        return (
+          <FeedbackModal 
+            icon={successIcon}
+            title="Guest Removed!"
+            buttons={[
+              { label: "Go Back", variant: "solid", onClick: () => setModalState(null)}
+            ]}
+          />
+        );
+      case 'resendConfirm':
+        return (
+          <FeedbackModal 
+            icon={questionIcon}
+            title="Are you sure you want to resend invitation to this guest?"
+            buttons={[
+              { label: "Send Invitation", variant: "solid", onClick: () => setModalState('resendSuccess') },
+              { label: "Cancel", variant: "outline", onClick: () => setModalState(null) }
+            ]}
+          />
+        );
+      case 'resendSuccess':
+        return (
+          <FeedbackModal 
+            icon={successIcon}
+            title="Invitation Resent!"
+            buttons={[
+              { label: "Go Back", variant: "solid", onClick: () => setModalState(null) }
+            ]}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
-    <>
+    <div className="relative">
+      {/* MODAL OVERLAY */}
+      {modalState && (
+        <>
+            {renderModalContent()}
+          </>
+      )}
+
       {/* HEADER */}
       <header className="h-20 bg-white shadow-sm py-4 px-10 flex items-center justify-between sticky top-0 z-30 font-poppins">
         <div className="flex items-center gap-8 flex-1">
@@ -211,7 +267,7 @@ const GuestManagement = () => {
                 alt="No Guests" 
                 className="w-64 h-64 object-contain mb-6 opacity-80"
               />
-              <h3 className="text-xl text-slate-900 mb-8">
+              <h3 className="text-xl font-bold text-slate-900 mb-8">
                 {searchTerm && !isEmpty ? "No guests match your search" : "No Guest Added"}
               </h3>
               {!searchTerm && (
@@ -265,7 +321,7 @@ const GuestManagement = () => {
                     )}
                   </div>
 
-                  {/* Dynamic Action Buttons (Only show when a specific event is selected) */}
+                  {/* Dynamic Action Buttons */}
                   {selectedEvent !== 'All Events' && (
                     <>
                       <Link to="/dashboard/add-guest" className="bg-[#6B4EFF] text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-[#583DD9] transition-all cursor-pointer">
@@ -279,7 +335,7 @@ const GuestManagement = () => {
                 </div>
               </div>
 
-              {/* Table Area - OVERFLOW-X-AUTO AND W-FULL */}
+              {/* Table Area */}
               <div className="flex-1 overflow-x-auto w-full">
                 <table className="w-full text-left border-collapse min-w-[1000px]">
                   <thead>
@@ -321,7 +377,10 @@ const GuestManagement = () => {
                         </td>
                         <td className="px-8 py-5 flex items-center justify-end gap-3 whitespace-nowrap">
                           {guest.status === 'Pending' ? (
-                            <button className="px-4 py-1.5 rounded-lg border border-[#6B4EFF] text-[#6B4EFF] text-xs font-semibold hover:bg-[#6B4EFF]/5 transition-colors cursor-pointer">
+                            <button 
+                              onClick={() => setModalState('resendConfirm')} // TRIGGERS RESEND MODAL
+                              className="px-4 py-1.5 rounded-lg border border-[#6B4EFF] text-[#6B4EFF] text-xs font-semibold hover:bg-[#6B4EFF]/5 transition-colors cursor-pointer"
+                            >
                               Resend
                             </button>
                           ) : (
@@ -329,7 +388,10 @@ const GuestManagement = () => {
                               Edit
                             </button>
                           )}
-                          <button className="px-4 py-1.5 rounded-lg border border-red-500 text-red-500 text-xs font-semibold hover:bg-red-50 transition-colors cursor-pointer">
+                          <button 
+                            onClick={() => setModalState('removeConfirm')} // TRIGGERS REMOVE MODAL
+                            className="px-4 py-1.5 rounded-lg border border-red-500 text-red-500 text-xs font-semibold hover:bg-red-50 transition-colors cursor-pointer"
+                          >
                             Remove
                           </button>
                         </td>
@@ -376,10 +438,9 @@ const GuestManagement = () => {
               </div>
             </>
           )}
-
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
