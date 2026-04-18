@@ -379,18 +379,18 @@ const GuestManagement = () => {
                           {guest.status === 'Pending' ? (
                             <button 
                               onClick={() => setModalState('resendConfirm')} // TRIGGERS RESEND MODAL
-                              className="px-4 py-1.5 rounded-lg border border-[#6B4EFF] text-[#6B4EFF] text-xs font-semibold hover:bg-[#6B4EFF]/5 transition-colors cursor-pointer"
+                              className="min-w-20 px-4 py-1.5 rounded-lg border border-[#6B4EFF] text-[#6B4EFF] text-xs font-semibold hover:bg-[#6B4EFF]/5 transition-colors cursor-pointer"
                             >
                               Resend
                             </button>
                           ) : (
-                            <button className="px-4 py-1.5 rounded-lg border border-[#6B4EFF] text-[#6B4EFF] text-xs font-semibold hover:bg-[#6B4EFF]/5 transition-colors cursor-pointer">
+                            <button className="min-w-20 px-4 py-1.5 rounded-lg border border-[#6B4EFF] text-[#6B4EFF] text-xs font-semibold hover:bg-[#6B4EFF]/5 transition-colors cursor-pointer">
                               Edit
                             </button>
                           )}
                           <button 
                             onClick={() => setModalState('removeConfirm')} // TRIGGERS REMOVE MODAL
-                            className="px-4 py-1.5 rounded-lg border border-red-500 text-red-500 text-xs font-semibold hover:bg-red-50 transition-colors cursor-pointer"
+                            className="min-w-20 px-4 py-1.5 rounded-lg border border-red-500 text-red-500 text-xs font-semibold hover:bg-red-50 transition-colors cursor-pointer"
                           >
                             Remove
                           </button>
