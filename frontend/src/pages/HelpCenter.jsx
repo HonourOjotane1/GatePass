@@ -26,10 +26,22 @@ const HelpCenter = () => {
   const [expandedFaq, setExpandedFaq] = useState(null);
 
   const faqs = [
-    "What is GatePass all about?",
-    "How do I create a new event?",
-    "Can I import guests from an Excel file?",
-    "How does the QR code check-in work?"
+    {
+      question: "What is GatePass all about?",
+      answer: "GatePass is an event management and gate access platform designed to help organizers seamlessly plan, publish, and manage events — from ticket creation to on-the-ground check-in. With GatePass, organizers can build event listings, control guest visibility, invite co-hosts, and manage attendee access all from a centralized dashboard. Whether you're running a private corporate gathering or a large public event, GatePass gives you the tools to handle registration, guest lists, and entry validation in one place."
+    },
+    {
+      question: "How do I create a new event?",
+      answer: "Creating an event on GatePass is done through the Event Creation Wizard, which walks you through the process step by step. You'll be able to: Set your event name, date, location, and description. Auto-generate a unique event slug (URL). Save your event as a draft and return to finish it later. Configure visibility settings (public, private, or invite-only). Invite co-hosts to help manage the event. Once you're satisfied with your setup, you can publish the event directly from the wizard or your Organizer Dashboard."   
+    },
+    {
+      question: "Can I import guests from an Excel file?",
+      answer: "Yes, you can import guests from an Excel file. Go to your event management page, select the 'Guests' tab, and click on 'Import Guests'. Upload your Excel file following the provided template."
+    },
+    {
+      question: "How does the QR code check-in work?",
+      answer: "GatePass uses QR code-based entry validation to make gate check-in fast and reliable. Here's how it works: Guest Registration — When a guest is added to an event, they receive a unique QR code tied to their entry pass. At the Gate — Your check-in team scans the guest's QR code using the GatePass check-in interface. Instant Validation — The system verifies the code in real time, confirms the guest's eligibility, and marks them as checked in. Duplicate Prevention — Each QR code can only be used once per event, preventing duplicate or fraudulent entries. No internet delays, no paper lists — just scan and go."
+    }
   ];
 
   // --- VIEW 1: MAIN HELP CENTER ---
@@ -141,7 +153,7 @@ const HelpCenter = () => {
               className="w-full flex items-center justify-between py-4 text-left cursor-pointer group"
             >
               <span className="text-slate-600 font-medium text-lg group-hover:text-slate-900 transition-colors">
-                {faq}
+                {faq.question}
               </span>
               <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 shrink-0">
                 <ChevronDown 
@@ -153,7 +165,7 @@ const HelpCenter = () => {
             {/* Expanded Content Placeholder */}
             {expandedFaq === index && (
               <div className="pb-4 text-slate-500 pr-12 animate-in fade-in duration-200">
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Sit quaerat quos fuga consequuntur accusamus vero porro necessitatibus aliquam, repellendus dignissimos.
+                {faq.answer}
               </div>
             )}
           </div>
