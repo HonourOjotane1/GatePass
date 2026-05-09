@@ -37,8 +37,8 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-6 lg:px-10 h-20 flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3">
-            <div className="w-8 h-8 flex items-center justify-center">
-              <img src={logopurple} alt="Gatepass Logo" />
+            <div className="max-w-18 h-8 flex items-center justify-center">
+              <img src={logopurple} alt="Gatepass Logo"/>
             </div>
             <span className="text-xl font-bold text-black tracking-tight">
               GatePass

@@ -118,7 +118,7 @@ const Sidebar = () => {
       {/* Logo Section */}
       <NavLink to="/">
         <div className={`p-8 flex items-center ${isCollapsed ? "justify-center px-0" : "gap-3"} cursor-pointer transition-all duration-300`}>
-          <div className="w-8 h-8 flex items-center justify-center shrink-0">
+          <div className="max-w-14 h-8 flex items-center justify-center shrink-0">
             <img src={logopurple} alt="GatePass" />
           </div>
           {!isCollapsed && (

@@ -47,13 +47,13 @@ const Signup = () => {
   return (
     <div className="font-poppins min-h-screen grid md:grid-cols-2 bg-white">
       {/* Left side */}
-      <div className="relative bg-gradient-to-b from-indigo-500 to-purple-600 text-white flex flex-col justify-center px-10 py-12 overflow-hidden">
+      <div className="relative bg-gradient-to-b from-indigo-500 to-purple-600 text-white flex flex-col justify-center px-5 py-8 sm:px-10 sm:py-12 overflow-hidden">
         {/* Abstract Background Graphic (Optional fallback for the poly background) */}
         <div className="absolute inset-0 bg-white/5 mix-blend-overlay pointer-events-none"></div>
 
         <div className="relative z-10 h-full w-full max-w-full mx-auto flex flex-col justify-center">
           <div className="mb-12">
-            <img src={logowhite} alt="GatePass" className="h-8 mb-16" />
+            <img src={logowhite} alt="GatePass" className="max-w-18 mb-16" />
             <h1 className="text-4xl md:text-5xl font-extrabold mb-4">
               Create an Account
             </h1>

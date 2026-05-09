@@ -13,7 +13,7 @@ const Login = () => {
       {/* Left side */}
       <div className="relative bg-gradient-to-b from-indigo-500 to-purple-600 text-white flex flex-col justify-end px-10 py-12">
         <div className="h-full w-full max-w-11/12 self-center">
-          <img src={logowhite} alt="GatePass" />
+          <img src={logowhite} alt="GatePass" className="max-w-18"/>
         </div>
         <div className="w-full max-w-11/12 self-center">
           <h1 className="text-3xl md:text-4xl font-bold mb-8">Welcome Back</h1>

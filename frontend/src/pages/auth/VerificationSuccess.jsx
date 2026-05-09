@@ -38,7 +38,7 @@ const VerificationSuccessful = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col font-poppins">
       {/* Logo */}
       <div className="p-6 md:p-8">
-       <img src={logopurple} alt="GatePass" />
+       <img src={logopurple} alt="GatePass" className='max-w-18'/>
       </div>
 
       {/* Main Content */}
