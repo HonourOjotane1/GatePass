@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   Bell, 
   ChevronDown, 
@@ -79,14 +79,14 @@ const HelpCenter = () => {
 
       {/* Action Cards */}
       <div className="flex items-center justify-center gap-6 mb-16">
-        <Link to="/dashboard/create-event" className="w-56 h-48 bg-[#6B4EFF]/10 rounded-3xl flex flex-col items-center justify-center gap-4 hover:shadow-md transition-all border border-[#6B4EFF]/20 cursor-pointer">
+        <Link to="/dashboard/create-event" className="w-56 h-48 bg-white rounded-3xl flex flex-col items-center justify-center gap-4 shadow-sm border border-slate-100 cursor-pointer transition-all duration-300 hover:shadow-md hover:bg-[#6B4EFF]/10 hover:border-[#6B4EFF]/20">
           <div className="w-12 h-12 rounded-full border-2 border-[#6B4EFF] text-[#6B4EFF] flex items-center justify-center">
             <PlusCircle size={24} />
           </div>
           <span className="font-bold text-slate-900">Create Event</span>
         </Link>
 
-        <Link to="/dashboard/my-events" className="w-56 h-48 bg-white rounded-3xl flex flex-col items-center justify-center gap-4 hover:shadow-md transition-all border border-slate-100 cursor-pointer shadow-sm">
+        <Link to="/dashboard/my-events" className="w-56 h-48 bg-white rounded-3xl flex flex-col items-center justify-center gap-4 shadow-sm border border-slate-100 cursor-pointer transition-all duration-300 hover:shadow-md hover:bg-[#6B4EFF]/10 hover:border-[#6B4EFF]/20">
           <div className="w-12 h-12 rounded-full border-2 border-[#6B4EFF] text-[#6B4EFF] flex items-center justify-center">
             <Users size={24} />
           </div>
@@ -95,7 +95,7 @@ const HelpCenter = () => {
 
         <button 
           onClick={() => setActiveView('faqs')}
-          className="w-56 h-48 bg-white rounded-3xl flex flex-col items-center justify-center gap-4 hover:shadow-md transition-all border border-slate-100 cursor-pointer shadow-sm"
+          className="w-56 h-48 bg-white rounded-3xl flex flex-col items-center justify-center gap-4 shadow-sm border border-slate-100 cursor-pointer transition-all duration-300 hover:shadow-md hover:bg-[#6B4EFF]/10 hover:border-[#6B4EFF]/20"
         >
           <div className="w-12 h-12 rounded-full border-2 border-[#6B4EFF] text-[#6B4EFF] flex items-center justify-center">
             <HelpCircle size={24} />
@@ -110,6 +110,7 @@ const HelpCenter = () => {
         <p className="text-slate-500 mb-8 font-medium">Get in touch with us for details on additional services.</p>
         
         <button
+          onClick={() => setActiveView('chatbot')}
           className="bg-[#6B4EFF] text-white px-12 py-4 rounded-xl font-bold shadow-lg hover:bg-[#583DD9] transition-colors mb-10 cursor-pointer"
         >
           Contact Us
@@ -164,7 +165,7 @@ const HelpCenter = () => {
             </button>
             {/* Expanded Content Placeholder */}
             {expandedFaq === index && (
-              <div className="pb-4 text-slate-500 pr-12 animate-in fade-in duration-200">
+              <div className="pb-4 text-slate-500 pr-12 animate-in fade-in duration-200 leading-relaxed">
                 {faq.answer}
               </div>
             )}

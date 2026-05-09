@@ -54,7 +54,7 @@ const Otp = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4 font-poppins">
       {/* Logo */}
-      <div className="absolute top-6 left-6 z-20">
+      <div className="absolute top-6 left-6 z-20 max-w-18">
         <img src={logopurple} alt="GatePass" />
       </div>
 
