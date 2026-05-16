@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, ChevronDown, Upload, Calendar } from "lucide-react";
+import { ArrowLeft, ChevronDown, Upload, Calendar, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import FeedbackModal from "../components/FeedbackModal";
 import SuccessIcon from "../assets/icons/success-badge.svg";
@@ -17,9 +17,11 @@ const CreateEvent = () => {
     eventCategory: "",
     coverImage: null,
 
-    // Step 2
+    // Step 2 
     startDate: "",
+    startTime: "",
     endDate: "",
+    endTime: "",
     venueName: "",
     address: "",
     isVirtual: false,
@@ -94,14 +96,14 @@ const CreateEvent = () => {
       <div className="flex items-center gap-4 mb-8 w-full bg-white p-6 rounded shadow-sm">
         <Link
           to="/dashboard"
-          className="text-slate-600 hover:text-slate-900 transition-colors"
+          className="text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
         >
           <ArrowLeft size={24} />
         </Link>
         <h1 className="text-2xl font-bold">Create Events</h1>
       </div>
 
-      {/* --- MAIN FORM CARD --- */}
+      {/* MAIN FORM CARD */}
       <div className="bg-white rounded border border-slate-100 p-8 lg:p-12 relative min-h-[600px]">
         {/* Circular Progress Indicator */}
         <div className="absolute top-8 right-8 lg:top-12 lg:right-12">
@@ -134,7 +136,7 @@ const CreateEvent = () => {
           </div>
         </div>
 
-        {/* --- FORM STEPS --- */}
+        {/* FORM STEPS */}
         <div className="max-w-3xl mx-auto pt-4 w-full">
           {currentStep === 1 && <Step1 form={formData} update={updateForm} />}
           {currentStep === 2 && <Step2 form={formData} update={updateForm} />}
@@ -183,7 +185,7 @@ const CreateEvent = () => {
                 disabled={!formData.accessType}
                 className={`w-full max-w-md py-4 rounded-xl font-bold text-lg transition-all ${
                   formData.accessType
-                    ? "text-white bg-[#6B4EFF] cursor-pointer"
+                    ? "text-white bg-[#6B4EFF] cursor-pointer hover:shadow-lg"
                     : " text-[#6B4EFF]/40 bg-[#6B4EFF]/20 cursor-not-allowed"
                 }`}
               >
@@ -197,7 +199,7 @@ const CreateEvent = () => {
   );
 };
 
-/* --- SUB-COMPONENTS (STEPS 1-5) --- */
+/* SUB-COMPONENTS (STEPS 1-5) */
 
 const Step1 = ({ form, update }) => (
   <div className="animate-in fade-in slide-in-from-right-4 duration-300">
@@ -211,27 +213,27 @@ const Step1 = ({ form, update }) => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
       <div className="space-y-2">
         <label className="text-sm font-bold text-slate-900">
-          Event Name <span className="text-red-500">*</span>
+          Event Name <span className="text-[#DB2F40]">*</span>
         </label>
         <input
           type="text"
           value={form.eventName}
           onChange={(e) => update("eventName", e.target.value)}
           placeholder="e.g Tech Conference 2025"
-          className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none transition-all placeholder:text-slate-300"
+          className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none transition-all placeholder:text-slate-400"
         />
       </div>
 
       <div className="space-y-2">
         <label className="text-sm font-bold text-slate-900">
-          Event Description <span className="text-red-500">*</span>
+          Event Description <span className="text-[#DB2F40]">*</span>
         </label>
         <input
           type="text"
           value={form.eventDescription}
           onChange={(e) => update("eventDescription", e.target.value)}
           placeholder="Tell attendees what the event is about"
-          className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none transition-all placeholder:text-slate-300"
+          className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none transition-all placeholder:text-slate-400"
         />
       </div>
 
@@ -241,9 +243,8 @@ const Step1 = ({ form, update }) => (
           <select
             value={form.eventType}
             onChange={(e) => update("eventType", e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white text-slate-600"
+            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white text-slate-600"
           >
-            {/* <option value=""></option> */}
             <option value="Corporate">Corporate</option>
             <option value="Private">Private</option>
             <option value="Concert">Concert</option>
@@ -260,13 +261,13 @@ const Step1 = ({ form, update }) => (
 
       <div className="space-y-2 relative">
         <label className="text-sm font-bold text-slate-900">
-          Event Category <span className="text-red-500">*</span>
+          Event Category <span className="text-[#DB2F40]">*</span>
         </label>
         <div className="relative">
           <select
             value={form.eventCategory}
             onChange={(e) => update("eventCategory", e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white text-slate-600"
+            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white text-slate-600"
           >
             <option value="">Select Category</option>
             <option value="Business">Business</option>
@@ -283,7 +284,7 @@ const Step1 = ({ form, update }) => (
 
     <div className="space-y-3">
       <label className="text-sm font-bold text-slate-900">
-        Event Cover Image <span className="text-red-500">*</span>
+        Event Cover Image <span className="text-[#DB2F40]">*</span>
       </label>
       <div className="border-2 border-dashed border-slate-200 rounded-2xl h-64 flex flex-col items-center justify-center bg-slate-50/50 hover:bg-slate-50 transition-colors cursor-pointer group">
         <div className="bg-white p-4 rounded-full shadow-sm mb-4 group-hover:scale-110 transition-transform">
@@ -293,7 +294,7 @@ const Step1 = ({ form, update }) => (
           Drop your files or click to upload
         </h3>
         <p className="text-sm text-slate-400 mt-1">JPEG, PNG, JPG ≤ 100MB</p>
-        <button className="mt-6 px-6 py-2 border border-slate-300 rounded-lg text-xs font-bold text-slate-600 hover:bg-white transition-colors">
+        <button className="mt-6 px-6 py-2 border border-slate-300 rounded-lg text-xs font-bold text-slate-600 hover:bg-white transition-colors cursor-pointer">
           Browse
         </button>
       </div>
@@ -310,76 +311,128 @@ const Step2 = ({ form, update }) => (
       Please enter the details correctly to create your event
     </p>
 
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mb-8">
+      
+      {/* Event Start Date */}
       <div className="space-y-2">
         <label className="text-sm font-bold text-slate-900">
-          Event Start Date & Time <span className="text-red-500">*</span>
+          Event Start Date <span className="text-[#DB2F40]">*</span>
         </label>
         <div className="relative">
           <input
-            type="text"
+            type="date"
             value={form.startDate}
             onChange={(e) => update("startDate", e.target.value)}
-            placeholder="Select date and time"
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white"
+            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white text-slate-700 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
           />
-          <ChevronDown
+          <Calendar
             className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
             size={20}
           />
         </div>
       </div>
 
+      {/* Event Start Time */}
       <div className="space-y-2">
         <label className="text-sm font-bold text-slate-900">
-          Event End Date & Time <span className="text-red-500">*</span>
+          Event Start Time <span className="text-[#DB2F40]">*</span>
         </label>
         <div className="relative">
           <input
-            type="text"
-            value={form.endDate}
-            onChange={(e) => update("endDate", e.target.value)}
-            placeholder="Select date and time"
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white placeholder:text-slate-300"
+            type="time"
+            value={form.startTime}
+            onChange={(e) => update("startTime", e.target.value)}
+            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white text-slate-700 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+          />
+          <Clock
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+            size={20}
           />
         </div>
       </div>
 
+      {/* Event End Date */}
       <div className="space-y-2">
         <label className="text-sm font-bold text-slate-900">
-          Venue Name <span className="text-red-500">*</span>
+          Event End Date <span className="text-[#DB2F40]">*</span>
+        </label>
+        <div className="relative">
+          <input
+            type="date"
+            value={form.endDate}
+            onChange={(e) => update("endDate", e.target.value)}
+            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white text-slate-700 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+          />
+          <Calendar
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+            size={20}
+          />
+        </div>
+      </div>
+
+      {/* Event End Time */}
+      <div className="space-y-2">
+        <label className="text-sm font-bold text-slate-900">
+          Event End Time <span className="text-[#DB2F40]">*</span>
+        </label>
+        <div className="relative">
+          <input
+            type="time"
+            value={form.endTime}
+            onChange={(e) => update("endTime", e.target.value)}
+            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white text-slate-700 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+          />
+          <Clock
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+            size={20}
+          />
+        </div>
+      </div>
+
+      {/* Venue Name */}
+      <div className="space-y-2">
+        <label className="text-sm font-bold text-slate-900">
+          Venue Name <span className="text-[#DB2F40]">*</span>
         </label>
         <input
           type="text"
           value={form.venueName}
           onChange={(e) => update("venueName", e.target.value)}
           placeholder="Enter venue name here"
-          className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-300"
+          className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-400"
         />
       </div>
 
+      {/* Address */}
       <div className="space-y-2">
         <label className="text-sm font-bold text-slate-900">
-          Address <span className="text-red-500">*</span>
+          Address <span className="text-[#DB2F40]">*</span>
         </label>
         <input
           type="text"
           value={form.address}
           onChange={(e) => update("address", e.target.value)}
           placeholder="Enter venue address here"
-          className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-300"
+          className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-400"
         />
       </div>
     </div>
 
-    <div className="flex items-center gap-4">
-      <span className="font-bold text-slate-900">Virtual Event</span>
+    {/* Custom Virtual Event Toggle */}
+    <div className="flex items-center gap-24 mt-8 pl-1">
+      <span className="text-sm font-bold text-slate-900">Virtual Event</span>
       <button
         onClick={() => update("isVirtual", !form.isVirtual)}
-        className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ${form.isVirtual ? "bg-[#6B4EFF]" : "bg-slate-200"}`}
+        className={`w-[46px] h-6 rounded-full transition-colors duration-300 border-2 flex items-center cursor-pointer ${
+          form.isVirtual 
+            ? "bg-slate-900 border-slate-900 px-[2px]" 
+            : "bg-white border-slate-900 px-[2px]"
+        }`}
       >
         <div
-          className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform duration-300 ${form.isVirtual ? "translate-x-6" : "translate-x-0"}`}
+          className={`w-[16px] h-[16px] rounded-full shadow-sm transform transition-transform duration-300 ${
+            form.isVirtual ? "translate-x-5 bg-white" : "translate-x-0 bg-slate-900"
+          }`}
         />
       </button>
     </div>
@@ -443,50 +496,50 @@ const Step4 = ({ form, update }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
           <div className="space-y-2">
             <label className="text-sm font-bold text-slate-900">
-              Ticket Name <span className="text-red-500">*</span>
+              Ticket Name <span className="text-[#DB2F40]">*</span>
             </label>
             <input
               type="text"
               value={form.ticketName}
               onChange={(e) => update("ticketName", e.target.value)}
               placeholder="Enter ticket name"
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-300"
+              className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-400"
             />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-bold text-slate-900">
-              Price <span className="text-red-500">*</span>
+              Price <span className="text-[#DB2F40]">*</span>
             </label>
             <input
               type="text"
               value={form.ticketPrice}
               onChange={(e) => update("ticketPrice", e.target.value)}
               placeholder="Enter price"
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-300"
+              className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-400"
             />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-bold text-slate-900">
-              Quantity <span className="text-red-500">*</span>
+              Quantity <span className="text-[#DB2F40]">*</span>
             </label>
             <input
               type="text"
               value={form.ticketQuantity}
               onChange={(e) => update("ticketQuantity", e.target.value)}
               placeholder="Enter quantity"
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-300"
+              className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-400"
             />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-bold text-slate-900">
-              Description <span className="text-red-500">*</span>
+              Description <span className="text-[#DB2F40]">*</span>
             </label>
             <input
               type="text"
               value={form.ticketDescription}
               onChange={(e) => update("ticketDescription", e.target.value)}
               placeholder="Enter ticket description"
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-300"
+              className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-400"
             />
           </div>
         </div>
@@ -509,7 +562,7 @@ const Step4 = ({ form, update }) => {
         <div className="flex justify-center border-b border-slate-200 mb-10 w-full max-w-md mx-auto">
           <button
             onClick={() => setTab("upload")}
-            className={`pb-3 px-8 font-bold text-sm transition-colors relative ${
+            className={`pb-3 px-8 font-bold text-sm transition-colors relative cursor-pointer ${
               tab === "upload" ? "text-slate-900" : "text-slate-400"
             }`}
           >
@@ -520,7 +573,7 @@ const Step4 = ({ form, update }) => {
           </button>
           <button
             onClick={() => setTab("manual")}
-            className={`pb-3 px-8 font-bold text-sm transition-colors relative ${
+            className={`pb-3 px-8 font-bold text-sm transition-colors relative cursor-pointer ${
               tab === "manual" ? "text-slate-900" : "text-slate-400"
             }`}
           >
@@ -540,7 +593,7 @@ const Step4 = ({ form, update }) => {
                   (must be according to our template)
                 </span>
               </span>
-              <button className="text-[#6B4EFF] text-xs font-bold border border-[#6B4EFF]/30 px-4 py-2 rounded-lg hover:bg-[#6B4EFF]/5">
+              <button className="text-[#6B4EFF] text-xs font-bold border border-[#6B4EFF]/30 px-4 py-2 rounded-lg hover:bg-[#6B4EFF]/5 cursor-pointer">
                 Download Template
               </button>
             </div>
@@ -550,7 +603,7 @@ const Step4 = ({ form, update }) => {
                 Drop your files or click to upload
               </h3>
               <p className="text-sm text-slate-400 mt-1">CSV, Excel</p>
-              <button className="mt-4 px-6 py-2 border border-slate-300 rounded-lg text-xs font-bold text-slate-600 bg-white">
+              <button className="mt-4 px-6 py-2 border border-slate-300 rounded-lg text-xs font-bold text-slate-600 bg-white cursor-pointer">
                 Browse
               </button>
             </div>
@@ -587,8 +640,14 @@ const Step5 = ({ form, onEdit, onPublish }) => (
       <ReviewItem label="Event Type" value={form.eventType} />
 
       <ReviewItem label="Event Category" value={form.eventCategory} />
-      <ReviewItem label="Event Start Date & Time" value={form.startDate} />
-      <ReviewItem label="Event End Date & Time" value={form.endDate} />
+      <ReviewItem 
+        label="Event Start" 
+        value={form.startDate ? `${form.startDate} ${form.startTime && `at ${form.startTime}`}` : ''} 
+      />
+      <ReviewItem 
+        label="Event End" 
+        value={form.endDate ? `${form.endDate} ${form.endTime && `at ${form.endTime}`}` : ''} 
+      />
 
       <ReviewItem label="Venue Name" value={form.venueName} />
       <ReviewItem
@@ -621,13 +680,13 @@ const Step5 = ({ form, onEdit, onPublish }) => (
     <div className="flex gap-4">
       <button
         onClick={onEdit}
-        className="flex-1 py-4 border border-[#6B4EFF] text-[#6B4EFF] font-bold rounded-xl hover:bg-[#6B4EFF]/5 transition-colors"
+        className="flex-1 py-4 border border-[#6B4EFF] text-[#6B4EFF] font-bold rounded-xl hover:bg-[#6B4EFF]/5 transition-colors cursor-pointer"
       >
         Edit
       </button>
       <button
         onClick={onPublish}
-        className="flex-1 py-4 bg-[#6B4EFF] text-white font-bold rounded-xl hover:shadow-lg hover:bg-[#583DD9] transition-all"
+        className="flex-1 py-4 bg-[#6B4EFF] text-white font-bold rounded-xl hover:shadow-lg hover:bg-[#583DD9] transition-all cursor-pointer"
       >
         Publish Event
       </button>

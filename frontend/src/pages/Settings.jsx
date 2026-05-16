@@ -266,7 +266,7 @@ const Settings = () => {
                   2FA
                 </button>
                 
-                <div className="my-2 border-t border-slate-50"></div>
+                {/* <div className="my-2 border-t border-slate-50"></div> */}
                 
                 <button className="w-full flex items-center gap-4 px-8 py-4 text-sm font-semibold text-slate-500 hover:bg-slate-50 hover:text-red-500 transition-colors border-l-4 border-transparent">
                   <LogOut size={20} />
