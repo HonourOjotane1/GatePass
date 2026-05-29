@@ -3,8 +3,7 @@ from fastapi import HTTPException, status
 
 
 def validate_email_format(email: str):
-    """Basec extra email sanity check on top of pydantic."""
-    patter = r"^[a-zA=Z0-9_.+-]+\.[a-zA-Z0-9-.]+$"
+    pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
     if not re.match(pattern, email):
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -12,9 +11,9 @@ def validate_email_format(email: str):
         )
 
 
-def validate_token_format(token: str):
+def validate_otp_format(token: str):
     """OTP must be exactly 6 digits. """
-    if not code.isdigit() or len(code) != 6:
+    if not token.isdigit() or len(token) != 6:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="OTP mustbe a 6-digit number."
@@ -24,7 +23,7 @@ def validate_token_format(token: str):
     """Magic link token basic sanity check."""
     if len(token)< 20 or not token.replace("-", "").replace("_", "").isalnum():
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABELE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Invalid token format."
         )
     

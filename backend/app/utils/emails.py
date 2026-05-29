@@ -23,7 +23,7 @@ def send_magic_link(email: str, token: str):
         server.send_message(msg)
 
 def send_otp(email: str, code: str):
-    msg = MIMETEXT(f"Your GatePass verification code is;\n\n{code}\n\nIt expiresin 10 minutes.")
+    msg = MIMEText(f"Your GatePass verification code is;\n\n{code}\n\nIt expiresin 10 minutes.")
     msg["Subject"] = "Your GatePass OTP Code"
     msg["From"] = os.getenv("MAIL_FROM")
     msg["To"] = email

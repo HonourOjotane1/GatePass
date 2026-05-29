@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-fromcollections import defaultdict
+from collections import defaultdict
 import asyncio
 
 #In-memorystore - tobe replaced with Redis when we move to production
@@ -51,7 +51,7 @@ def check_rate_limit(identifier: str, action: str) -> tuple[bool, str]:
     _clean_old_requests(key, rule["window_minutes"])
     _request_counts[key].append(datetime.utcnow())
 
-    if len(_requests_counts[key]) > rule["max"]:
+    if len(_request_counts[key]) > rule["max"]:
         block(identifier)
         return False, f"Too many{action.replace('_', ' ')} attempts. Blocked for {BLOCK_DURATION_MINUTES} minutes."
     

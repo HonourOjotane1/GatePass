@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel, EmailStr
 from uuid import UUID
 
@@ -7,7 +9,7 @@ class UserBase(BaseModel):
     first_name: str
     last_name: str
     email: EmailStr
-    phone_number: int
+    phone_number: Optional[str] = None
     # is_adult : Default = False
     # gender: male or female
 

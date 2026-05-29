@@ -2,9 +2,12 @@ from fastapi import FastAPI
 from app.api.v1.routes.user import user_router
 from app.db.database import engine, Base
 from app.api.v1.models.user import User
+from app.api.v1.models.events import Event
 from app.api.v1.models.magic_link import MagicLinkToken
+from app.api.v1.models.cohost import EventCoHost
 from app.api.v1.routes.guests import guest_router
 from app.api.v1.routes.auth import auth_router
+from app.api.v1.routes.events import event_router
 from app.api.v1.models.otp import OTPCode
 from app.core.middleware import SecurityHeadersMiddleware, BlockedIPMiddleware
 
@@ -21,9 +24,10 @@ async def create_tables():
         await conn.run_sync(Base.metadata.create_all)
 
 
-app.include_router(user_router, prefix="/users", tags=["User"])
-app.include_router(guest_router, prefix="/guests", tags=["Guest"])
+app.include_router(user_router, prefix="/users", tags=["Users"])
+app.include_router(guest_router, prefix="/guests", tags=["Guests"])
 app.include_router(auth_router, prefix="/auth", tags=["Auth"])
+app.include_router(event_router, prefix="/events", tags=["Events"])
 
 
 @app.get("/")

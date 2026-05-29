@@ -6,7 +6,7 @@ import os
 from typing import Optional
 from dotenv import load_dotenv
 from fastapi import Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, OAuth2PasswordBearer
 from starlette import status
 from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,7 +27,8 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60))
 EMAIL_TOKEN_EXPIRE_MINUTES= int(os.getenv("EMAIL_TOKEN_EXPIRE_MINUTES", 1440))
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/users/login")
+# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login")
+bearer_scheme = HTTPBearer()
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     try:
@@ -113,16 +114,70 @@ async def authenticate_user(db: AsyncSession, username: str, password: str):
     user = result.scalar_one_or_none()
     if not user:
         return False
-    if not verify_password(username, user.hashed_password):
+    if not verify_password(password, user.hashed_password):
         return False
     return user
 
-async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)) -> User:
-    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    email = payload.get("sub")
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    db: AsyncSession = Depends(get_db)
+) -> User:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials.",
+        headers={"WWW-Authenticate": "Bearer"}
+    )
+    try:
+        token = credentials.credentials  # HTTPBearer extracts token from "Bearer <token>"
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("type") != "access":
+            raise credentials_exception
+        email: str = payload.get("sub")
+        if not email:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+
     result = await db.execute(select(User).where(User.email == email))
     user = result.scalar_one_or_none()
+    if user is None:
+        raise credentials_exception
     return user
+
+
+#GET_CURRENT_USER USING 0AUTH2BEARER.
+# async def get_current_user(
+#     token: str = Depends(oauth2_scheme),
+#     db: AsyncSession = Depends(get_db)
+# ) -> User:
+#     credentials_exception = HTTPException(
+#         status_code=status.HTTP_401_UNAUTHORIZED,
+#         detail="Could not validate credentials.",
+#         headers={"WWW-Authenticate": "Bearer"}
+#     )
+#     try:
+#         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+#         if payload.get("type") != "access":
+#             raise credentials_exception
+#         email: str = payload.get("sub")
+#         if not email:
+#             raise credentials_exception
+#     except JWTError:
+#         raise credentials_exception
+
+#     result = await db.execute(select(User).where(User.email == email))
+#     user = result.scalar_one_or_none()
+#     if user is None:
+#         raise credentials_exception
+#     return user
+
+
+# async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)) -> User:
+#     payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+#     email = payload.get("sub")
+#     result = await db.execute(select(User).where(User.email == email))
+#     user = result.scalar_one_or_none()
+#     return user
 # def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
 #     try:
 #         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])

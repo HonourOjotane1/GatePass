@@ -5,7 +5,7 @@ from app.api.v1.models.user import User
 from app.api.v1.models.magic_link import MagicLinkToken
 from app.core.security import generate_magic_token, get_expiry_time
 from app.api.v1.models.otp import OTPCode
-from app.core.security import generate_otp, get_otp_expire_time
+from app.core.security import generate_otp, get_otp_expiry_time
 
 async def create_magic_link(db: AsyncSession, user):
     token = generate_magic_token()
@@ -40,22 +40,24 @@ async def verify_magic_token(db: AsyncSession, token: str):
 async def create_otp(db: AsyncSession, user) -> str:
     #invalidate any existing unused OTPs for this user
     result = await db.execute(
-        select(OTPCode).where(OTPCode.user_id == user.id, OTPCode.used == False)
-        existing = result.scalars().all()
-        for old in existing:
+        select(OTPCode).where(OTPCode.user_id == user.id, OTPCode.used == False))
+    existing = result.scalars().all()
+    for old in existing:
         old.used = True
+    
+    await db.flush() #persists the invalidation before adding new OTP
 
-        code = generate_otp()
+    code = generate_otp()
 
-        otp = OTPCode(
-            user_id=user.id,
-            code=code,
-            expires_at=get_otp_expiry_time()
-        )
-        db.add(otp)
-        await db.commit()
-        return code
+    otp = OTPCode(
+        user_id=user.id,
+        code=code,
+        expires_at=get_otp_expiry_time()
     )
+    db.add(otp)
+    await db.commit()
+    return code
+
 async def verify_otp(db: AsyncSession, email: str, code: str):
     #find user first
     user_result = await db.execute(select(User).where(User.email== email))
