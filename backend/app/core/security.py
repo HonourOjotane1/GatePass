@@ -66,6 +66,72 @@ async def verify_email_token(token: str, db: AsyncSession) -> User:
     result = await db.execute(select(User).where(User.email == email))
     user = result.scalar_one_or_none()
     return user
+
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password[:72])
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password[:72], hashed_password)
+
+async def authenticate_user(db: AsyncSession, username: str, password: str):
+    result = await db.execute(select(User).where(User.email == username))
+    user = result.scalar_one_or_none()
+    if not user:
+        return False
+    if not verify_password(password, user.hashed_password):
+        return False
+    return user
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    db: AsyncSession = Depends(get_db)
+) -> User:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials.",
+        headers={"WWW-Authenticate": "Bearer"}
+    )
+    try:
+        token = credentials.credentials  # HTTPBearer extracts token from "Bearer <token>"
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("type") != "access":
+            raise credentials_exception
+        email: str = payload.get("sub")
+        if not email:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise credentials_exception
+    return user
+
+
+def get_current_verified_user(current_user: User = Depends(get_current_user)) -> User:
+    if not current_user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Email not verified. Please verify your email to access this resource."
+        )
+    return current_user
+def generate_magic_token() -> str:
+    return secrets.token_urlsafe(32)
+
+def get_expiry_time():
+    minutes = int(os.getenv("MAGIC_LINK_EXPIRE_MINUTES", 15))
+    return datetime.utcnow() + timedelta(minutes=minutes)
+
+def generate_otp() -> str:
+    return str(random.randint(100000, 999999)) # 6-digit code
+
+def get_otp_expiry_time():
+    minutes = int(os.getenv("OTP_EXPIRE_MINUTES", 10))
+    return datetime.utcnow() + timedelta(minutes=minutes)
+
+
+
 # def verify_email_token(token: str, db: Session) -> User:
 #     try:
 #         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -103,46 +169,11 @@ async def verify_email_token(token: str, db: AsyncSession) -> User:
 #             detail="Invalid token"
 #         )
     
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
 
-def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
-
-async def authenticate_user(db: AsyncSession, username: str, password: str):
-    result = await db.execute(select(User).where(User.email == username))
-    user = result.scalar_one_or_none()
-    if not user:
-        return False
-    if not verify_password(password, user.hashed_password):
-        return False
-    return user
-
-async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
-    db: AsyncSession = Depends(get_db)
-) -> User:
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials.",
-        headers={"WWW-Authenticate": "Bearer"}
-    )
-    try:
-        token = credentials.credentials  # HTTPBearer extracts token from "Bearer <token>"
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        if payload.get("type") != "access":
-            raise credentials_exception
-        email: str = payload.get("sub")
-        if not email:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
-
-    result = await db.execute(select(User).where(User.email == email))
-    user = result.scalar_one_or_none()
-    if user is None:
-        raise credentials_exception
-    return user
+# def _prepare_password(password: str) -> str:
+#     """Hash with SHA-256 first to safely support passwords longer than 72 bytes."""
+#     digest = hashlib.sha256(password.encode()).digest()
+#     return base64.b64encode(digest).decode()
 
 
 #GET_CURRENT_USER USING 0AUTH2BEARER.
@@ -221,23 +252,3 @@ async def get_current_user(
 #             detail="Internal server error"
 #         )
     
-def get_current_verified_user(current_user: User = Depends(get_current_user)) -> User:
-    if not current_user.is_verified:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Email not verified. Please verify your email to access this resource."
-        )
-    return current_user
-def generate_magic_token() -> str:
-    return secrets.token_urlsafe(32)
-
-def get_expiry_time():
-    minutes = int(os.getenv("MAGIC_LINK_EXPIRE_MINUTES", 15))
-    return datetime.utcnow() + timedelta(minutes=minutes)
-
-def generate_otp() -> str:
-    return str(random.randint(100000, 999999)) # 6-digit code
-
-def get_otp_expiry_time():
-    minutes = int(os.getenv("OTP_EXPIRE_MINUTES", 10))
-    return datetime.utcnow() + timedelta(minutes=minutes)

@@ -1,9 +1,9 @@
 from datetime import datetime
 import uuid
 from sqlalchemy import DateTime, Column, String, Boolean, Enum
-from sqlalchemy.dialects.postgresql import UUID
 from app.db.database import Base
 import enum
+# from sqlalchemy.dialects.postgresql import UUID
 
 class UserRole(str, enum.Enum):
     organizer = "organizer"
