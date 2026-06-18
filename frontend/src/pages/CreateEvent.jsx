@@ -245,6 +245,7 @@ const Step1 = ({ form, update }) => (
             onChange={(e) => update("eventType", e.target.value)}
             className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white text-slate-600"
           >
+            <option value="">Select Type</option>
             <option value="Corporate">Corporate</option>
             <option value="Private">Private</option>
             <option value="Concert">Concert</option>
