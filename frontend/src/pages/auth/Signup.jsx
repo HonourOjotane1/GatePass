@@ -1,21 +1,32 @@
 import React, { useState, useEffect } from "react";
-import { Eye, EyeOff } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import logowhite from "../../assets/Logo-white.svg";
-import Slide1 from "../../assets/Signup-image.png";
+
+import api from "../../utils/api";
 
 const Signup = () => {
-  // Password visibility states
+  const navigate = useNavigate();
+
+  // States
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [agreed, setAgreed] = useState(false);
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  // Slideshow state
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  // Slideshow data (Replace images with your local assets if preferred)
   const slides = [
     {
-      image: Slide1,
+      image: "https://images.unsplash.com/photo-1511556532299-8f662fc26c06?q=80&w=2070&auto=format&fit=crop",
       title: "Create Events Effortlessly",
       desc: "Our smart Event Wizard helps you design, organize, and publish events faster than ever.",
     },
@@ -33,27 +44,72 @@ const Signup = () => {
       image: "https://images.unsplash.com/photo-1515169067868-5387ec356754?q=80&w=2070&auto=format&fit=crop",
       title: "Secure Access Control",
       desc: "Ensure smooth entry with verifiable QR codes and secure check-in systems.",
-    },
+    }
   ];
 
-  // Auto-play slideshow
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
-    }, 3000); // Changes slide every 3 seconds
+    }, 5000);
     return () => clearInterval(timer);
   }, [slides.length]);
 
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    if (!agreed) return setError("You must agree to the Terms & Conditions.");
+    if (password !== confirmPassword) return setError("Passwords do not match.");
+    if (password.length < 8) return setError("Password must be at least 8 characters long.");
+
+    setLoading(true);
+
+    try {
+      const generatedUsername = email.split("@")[0].replace(/[^a-zA-Z0-9]/g, "") + Math.floor(Math.random() * 1000);
+
+      const payload = {
+        email: email,
+        password: password,
+        username: generatedUsername,
+        first_name: firstName.trim(),
+        last_name: lastName.trim()
+      };
+
+      await api.post("/users/register", payload);
+
+      setSuccess("Account created successfully. Redirecting...");
+      
+      try {
+        await api.patch(`/users/dev/verify/${email}`);
+      } catch (verifyErr) {
+        console.warn("Dev auto-verify failed, but registration succeeded.", verifyErr);
+      }
+
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+
+    } catch (err) {
+      if (err.response && err.response.data && err.response.data.detail) {
+        setError(err.response.data.detail);
+      } else {
+        setError("Registration failed. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="font-poppins min-h-screen grid md:grid-cols-2 bg-white">
-      {/* Left side */}
-      <div className="relative bg-gradient-to-b from-indigo-500 to-purple-600 text-white flex flex-col justify-center px-5 py-8 sm:px-10 sm:py-12 overflow-hidden">
-        {/* Abstract Background Graphic (Optional fallback for the poly background) */}
+      {/* Left side (Slideshow) */}
+      <div className="relative bg-gradient-to-b from-indigo-500 to-purple-600 text-white flex flex-col justify-center px-10 py-12 overflow-hidden">
         <div className="absolute inset-0 bg-white/5 mix-blend-overlay pointer-events-none"></div>
 
-        <div className="relative z-10 h-full w-full max-w-full mx-auto flex flex-col justify-center">
+        <div className="relative z-10 h-full w-full max-w-lg mx-auto flex flex-col justify-center">
           <div className="mb-12">
-            <img src={logowhite} alt="GatePass" className="max-w-18 mb-16" />
+            <img src={logowhite} alt="GatePass" className="h-8 mb-16" />
             <h1 className="text-4xl md:text-5xl font-extrabold mb-4">
               Create an Account
             </h1>
@@ -62,8 +118,7 @@ const Signup = () => {
             </p>
           </div>
 
-          {/* Slideshow Card */}
-          <div className="rounded-2xl overflow-hidden shadow-2xl relative border border-white/20 h-80 bg-slate-900 group">
+          <div className="rounded-[2rem] overflow-hidden shadow-2xl relative border border-white/20 h-80 bg-slate-900 group">
             {slides.map((slide, index) => (
               <div
                 key={index}
@@ -76,7 +131,6 @@ const Signup = () => {
                   alt={slide.title}
                   className="w-full h-full object-cover"
                 />
-                {/* Gradient Overlay for text readability */}
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/50 to-transparent opacity-90"></div>
                 
                 <div className="absolute bottom-0 left-0 w-full p-8 pt-20">
@@ -91,13 +145,12 @@ const Signup = () => {
             ))}
           </div>
 
-          {/* Slideshow Indicators */}
           <div className="flex items-center justify-center gap-2 mt-8">
             {slides.map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentSlide(index)}
-                className={`h-2 rounded-full transition-all duration-300 ${
+                className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
                   currentSlide === index
                     ? "w-8 bg-white"
                     : "w-2 bg-white/40 hover:bg-white/60"
@@ -109,24 +162,46 @@ const Signup = () => {
         </div>
       </div>
 
-      {/* Right side */}
+      {/* Right side (Form) */}
       <div className="flex items-center justify-center px-8 py-12">
         <div className="w-full max-w-md">
-          <h2 className="text-3xl font-extrabold mb-10 text-slate-900">
+          <h2 className="text-3xl font-extrabold mb-8 text-slate-900">
             Let's Get Started
           </h2>
 
+          {/* Feedback Messages */}
+          {error && <div className="w-fit p-4 mb-6 text-sm text-[#DB2F40] bg-[#DB2F40]/10 rounded-xl border border-[#DB2F40]/20">{error}</div>}
+          {success && <div className="w-fit p-4 mb-6 text-sm text-emerald-600 bg-emerald-50 rounded-xl border border-emerald-200">{success}</div>}
+
           {/* Signup Form */}
-          <form className="space-y-6">
-            <div>
-              <label className="block text-sm font-bold text-slate-900 mb-2">
-                Full Name
-              </label>
-              <input
-                type="text"
-                placeholder="Enter name here"
-                className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none text-slate-700 transition-all placeholder:text-slate-400"
-              />
+          <form className="space-y-5" onSubmit={handleRegister}>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-900 mb-2">
+                  First Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="First name"
+                  className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none text-slate-700 transition-all placeholder:text-slate-400"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-900 mb-2">
+                  Last Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Last name"
+                  className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none text-slate-700 transition-all placeholder:text-slate-400"
+                />
+              </div>
             </div>
 
             <div>
@@ -135,6 +210,9 @@ const Signup = () => {
               </label>
               <input
                 type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter a valid email address"
                 className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none text-slate-700 transition-all placeholder:text-slate-400"
               />
@@ -147,13 +225,16 @@ const Signup = () => {
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter password here"
                   className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none text-slate-700 transition-all placeholder:text-slate-400"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -171,13 +252,16 @@ const Signup = () => {
               <div className="relative">
                 <input
                   type={showConfirmPassword ? "text" : "password"}
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Re-enter password here"
                   className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none text-slate-700 transition-all placeholder:text-slate-400"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
                 >
                   {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -187,6 +271,9 @@ const Signup = () => {
             <div className="flex items-start gap-3 pt-2">
               <input 
                 type="checkbox" 
+                required
+                checked={agreed}
+                onChange={(e) => setAgreed(e.target.checked)}
                 className="mt-1 w-4 h-4 rounded border-gray-300 text-[#6B4EFF] focus:ring-[#6B4EFF] cursor-pointer" 
               />
               <label className="text-sm text-slate-600">
@@ -201,14 +288,16 @@ const Signup = () => {
               </label>
             </div>
 
-            <Link to="/otp" className="block pt-4">
+            <div className="pt-4">
               <button
                 type="submit"
-                className="w-full bg-[#6B4EFF] hover:bg-[#583DD9] text-white py-4 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all"
+                disabled={loading}
+                className="w-full flex justify-center items-center gap-2 bg-[#6B4EFF] hover:bg-[#583DD9] disabled:bg-[#6B4EFF]/70 text-white py-4 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all cursor-pointer"
               >
-                Continue
+                {loading && <Loader2 size={20} className="animate-spin" />}
+                {loading ? "Creating Account..." : "Continue"}
               </button>
-            </Link>
+            </div>
           </form>
 
           <p className="text-sm text-slate-600 text-center mt-8 font-medium">

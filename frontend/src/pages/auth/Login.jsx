@@ -1,12 +1,53 @@
 import React, { useState } from "react";
 import signupimage from "../../assets/Signup-image.png";
 import logowhite from "../../assets/Logo-white.svg";
-import { Eye, EyeOff } from "lucide-react";
-import { Link, NavLink } from "react-router-dom";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+
+import api from "../../utils/api";
+import { useAuth } from "../../context/AuthContext";
 
 const Login = () => {
-  // State for password visibility
+  const navigate = useNavigate();
+  const { login } = useAuth(); // Destructure the login function from our context
+
+  // States
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const response = await api.post("/users/login", {
+        email: email,
+        password: password
+      });
+
+        const userData = response.data;
+
+      // 3. Store the user data in the Context API
+      login(userData);
+
+      // 4. Redirect to the Dashboard
+      navigate("/dashboard");
+
+    } catch (err) {
+      if (err.response && err.response.data && err.response.data.detail) {
+        setError(err.response.data.detail);
+      } else {
+        setError("Login failed. Please check your credentials.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="font-poppins min-h-screen grid md:grid-cols-2 bg-white">
@@ -48,16 +89,26 @@ const Login = () => {
             Login to Your Account
           </h2>
 
+          {/* Error Message Display */}
+          {error && (
+            <div className="w-fit p-4 mb-6 text-sm text-[#DB2F40] bg-[#DB2F40]/10 rounded-xl border border-[#DB2F40]/20">
+              {error}
+            </div>
+          )}
+
           {/* Login Form */}
-          <form className="space-y-5">
+          <form className="space-y-5" onSubmit={handleLogin}>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Email Address
               </label>
               <input
                 type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter a valid email address"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:outline-[#6B4EFF] focus:outline-none"
+                className="w-full px-4 py-3.5 rounded-lg border border-gray-300 focus:ring-2 focus:outline-[#6B4EFF] focus:outline-none transition-all placeholder:text-slate-400"
               />
             </div>
             
@@ -68,8 +119,11 @@ const Login = () => {
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter password here"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:text-[#6B4EFF] focus:outline-none"
+                  className="w-full px-4 py-3.5 rounded-lg border border-gray-300 focus:ring-2 focus:text-[#6B4EFF] focus:outline-none transition-all placeholder:text-slate-400"
                 />
                 <button
                   type="button"
@@ -82,19 +136,21 @@ const Login = () => {
             </div>
             
             <div className="flex items-start justify-end gap-2 w-full">
-              <a href="#" className="text-[#6B4EFF] font-bold">
+              <Link to="#" className="text-[#6B4EFF] font-bold hover:underline">
                 Forgot Password
-              </a>
+              </Link>
             </div>
             
-            <NavLink to="/dashboard" className="block w-full">
+            <div className="pt-2">
               <button
                 type="submit"
-                className="w-full bg-[#6B4EFF] hover:bg-indigo-700 cursor-pointer text-white py-3 rounded-lg font-semibold shadow-lg transition"
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-2 bg-[#6B4EFF] hover:bg-indigo-700 disabled:bg-[#6B4EFF]/70 cursor-pointer text-white py-3.5 rounded-lg font-semibold shadow-lg transition-all"
               >
-                Continue
+                {loading && <Loader2 size={20} className="animate-spin" />}
+                {loading ? "Logging in..." : "Continue"}
               </button>
-            </NavLink>
+            </div>
           </form>
 
           <p className="text-sm text-gray-600 text-center mt-6">
