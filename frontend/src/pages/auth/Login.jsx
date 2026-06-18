@@ -11,11 +11,10 @@ const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth(); // Destructure the login function from our context
 
-  // Form states
+  // States
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // UI states
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -33,7 +32,7 @@ const Login = () => {
 
         const userData = response.data;
 
-      // 3. Store the user data in our Context API
+      // 3. Store the user data in the Context API
       login(userData);
 
       // 4. Redirect to the Dashboard
