@@ -8,9 +8,9 @@ import GuestManagement from "../pages/GuestManagement";
 import Analytics from "../pages/Analytics";
 import HelpCenter from "../pages/HelpCenter";
 import Settings from "../pages/Settings";
-import Login from "../pages/auth/Login";
+// import Login from "../pages/auth/Login";
 import Otp from "../pages/auth/Otp";
-import Signup from "../pages/auth/Signup";
+// import Signup from "../pages/auth/Signup";
 // import MagicLink from "../pages/auth/MagicLink";
 import Home from "../pages/Home";
 import EventDetails from "../pages/EventDetails";
@@ -38,14 +38,14 @@ export const router = createBrowserRouter([
     element: <Home />,
     errorElement: <ErrorHandler />,
   },
-  {
-    path: "/login",
-    element: <Login />,
-  },
-  {
-    path: "/signup",
-    element: <Signup />,
-  },
+  // {
+  //   path: "/login",
+  //   element: <Login />,
+  // },
+  // {
+  //   path: "/signup",
+  //   element: <Signup />,
+  // },
   // {
   //   path: "/magic-link",
   //   element: <MagicLink />,
