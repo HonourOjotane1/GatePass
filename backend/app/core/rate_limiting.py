@@ -31,7 +31,7 @@ def is_blocked(identifier: str) -> bool:
         return False
     
 def block(identifier: str):
-    _blocked_ips[identifier] = datetime.utcmow() + timedelta(minutes=BLOCK_DURATION_MINUTES)
+    _blocked_ips[identifier] = datetime.utcnow() + timedelta(minutes=BLOCK_DURATION_MINUTES)
 
 
 def check_rate_limit(identifier: str, action: str) -> tuple[bool, str]:

@@ -4,6 +4,12 @@ from app.api.v1.routes.user import user_router
 from app.api.v1.routes.guests import guest_router
 from app.api.v1.routes.auth import auth_router
 from app.api.v1.routes.events import event_router
+from app.api.v1.routes.access_control import access_router
+from app.api.v1.models.access_control import (
+    EventZone, ZoneAccessRule, GuestQRCode,
+    CheckInLog, EventStaffAssignment
+)
+
 from app.core.middleware import SecurityHeadersMiddleware, BlockedIPMiddleware
 import os
 
@@ -33,6 +39,7 @@ app.include_router(user_router, prefix="/users", tags=["Users"])
 app.include_router(guest_router, prefix="/guests", tags=["Guests"])
 app.include_router(auth_router, prefix="/auth", tags=["Auth"])
 app.include_router(event_router, prefix="/events", tags=["Events"])
+app.include_router(access_router, prefix="/access", tags=["Access Control"])
 
 
 @app.get("/")
