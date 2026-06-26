@@ -38,14 +38,14 @@ export const router = createBrowserRouter([
     element: <Home />,
     errorElement: <ErrorHandler />,
   },
-  // {
-  //   path: "/login",
-  //   element: <Login />,
-  // },
-  // {
-  //   path: "/signup",
-  //   element: <Signup />,
-  // },
+  {
+    path: "/login",
+    element: <Login />,
+  },
+  {
+    path: "/signup",
+    element: <Signup />,
+  },
   // {
   //   path: "/magic-link",
   //   element: <MagicLink />,
