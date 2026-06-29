@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.api.v1.services.user import login_user, logout_user, complete_onboarding, get_users, register
@@ -27,7 +27,7 @@ async def register_user(payload: UserBaseCreate, db: AsyncSession = Depends(get_
 
 
 @user_router.post("/login", response_model=LoginResponse)
-async def login(payload: LoginRequest, request: Request, db: AsyncSession = Depends(get_db)):
+async def login(payload: LoginRequest, request: Request, response: Response, db: AsyncSession = Depends(get_db)):
     client_ip = request.client.host
 
     for identifier in [client_ip, payload.email]:
@@ -35,14 +35,26 @@ async def login(payload: LoginRequest, request: Request, db: AsyncSession = Depe
         if not allowed:
             raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=reason)
 
-    return await login_user(db, payload.email, payload.password)
+    result = await login_user(db, payload.email, payload.password)
+
+    response.set_cookie(
+        key="access_token",
+        value= result["access_token"],
+        httponly=True,
+        secure=True,
+        samesite="none",
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60, # can be 60 * 60 * 24 * 7 for 7 days
+    )
+    return result
 
 
 @user_router.post("/logout", response_model=LogoutResponse)
 async def logout(
+    response: Response,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    response.delete_cookie(key="access_token", httponly=True, secure=True, samesite="none")
     return await logout_user(db, current_user)
 
 

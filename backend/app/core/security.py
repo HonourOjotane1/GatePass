@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 import os
 from typing import Optional
 from dotenv import load_dotenv
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, OAuth2PasswordBearer
 from starlette import status
 from jose import JWTError, jwt
@@ -28,7 +28,7 @@ EMAIL_TOKEN_EXPIRE_MINUTES= int(os.getenv("EMAIL_TOKEN_EXPIRE_MINUTES", 1440))
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login")
-bearer_scheme = HTTPBearer()
+bearer_scheme = HTTPBearer(auto_error=False) # auto_error=False so it doesn't crash when no Bearer header
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     try:
@@ -83,7 +83,8 @@ async def authenticate_user(db: AsyncSession, username: str, password: str):
     return user
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
     db: AsyncSession = Depends(get_db)
 ) -> User:
     credentials_exception = HTTPException(
@@ -91,8 +92,17 @@ async def get_current_user(
         detail="Could not validate credentials.",
         headers={"WWW-Authenticate": "Bearer"}
     )
-    try:
+    #Try bearer token first, fall back to cookie if not present
+    token = None
+    if credentials:
         token = credentials.credentials  # HTTPBearer extracts token from "Bearer <token>"
+    else:
+        token = request.cookies.get("access_token")
+
+    if not token:
+        raise credentials_exception
+
+    try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         if payload.get("type") != "access":
             raise credentials_exception
@@ -107,6 +117,7 @@ async def get_current_user(
     if user is None:
         raise credentials_exception
     return user
+
 
 
 def get_current_verified_user(current_user: User = Depends(get_current_user)) -> User:
