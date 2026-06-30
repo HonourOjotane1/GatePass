@@ -9,7 +9,7 @@ import { useAuth } from "../../context/AuthContext";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login } = useAuth(); // Destructure the login function from our context
+  const { login } = useAuth();
 
   // States
   const [email, setEmail] = useState("");
@@ -32,10 +32,9 @@ const Login = () => {
 
         const userData = response.data;
 
-      // 3. Store the user data in the Context API
+      // Store the user data in the Context API
       login(userData);
 
-      // 4. Redirect to the Dashboard
       navigate("/dashboard");
 
     } catch (err) {
