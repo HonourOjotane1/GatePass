@@ -9,7 +9,9 @@ from app.core.security import get_current_user
 from app.core.rate_limiting import check_rate_limit
 from app.core.security_checks import validate_email_format, validate_password_strength
 from app.db.database import get_db
+import os
 
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60))
 
 user_router = APIRouter()
 
