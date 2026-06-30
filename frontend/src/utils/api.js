@@ -1,8 +1,9 @@
 import axios from 'axios';
 
-const apiClient = axios.create({
+const api = axios.create({
   // baseURL: "/api",
   baseURL: "https://gatepass-backend-fiod.onrender.com",
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
@@ -10,4 +11,4 @@ const apiClient = axios.create({
 
 
 
-export default apiClient;
+export default api;

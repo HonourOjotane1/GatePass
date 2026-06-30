@@ -175,7 +175,6 @@ const Signup = () => {
 
           {/* Signup Form */}
           <form className="space-y-5" onSubmit={handleRegister}>
-            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-bold text-slate-900 mb-2">
                   First Name
@@ -202,7 +201,6 @@ const Signup = () => {
                   className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none text-slate-700 transition-all placeholder:text-slate-400"
                 />
               </div>
-            </div>
 
             <div>
               <label className="block text-sm font-bold text-slate-900 mb-2">

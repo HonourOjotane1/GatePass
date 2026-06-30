@@ -1,32 +1,46 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import api from '../utils/api';
 
 const AuthContext = createContext(null);
 
-// Provider component that wraps the app
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true); 
 
-  // function called upon successful login
+  useEffect(() => {
+    const verifySession = async () => {
+      try {
+        const response = await api.get('/users/me'); 
+        setUser(response.data); 
+      } catch (error) {
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    verifySession();
+  }, []);
+
   const login = (userData) => {
     setUser(userData);
   };
-
-  // function called when user logs out
-  const logout = () => {
-    setUser(null);
+  
+  const logout = async () => {
+    try {
+      await api.post('/users/logout'); 
+    } catch (error) {
+      console.error("Failed to log out on the server", error);
+    } finally {
+      setUser(null);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-// Custom hook
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
-
-
-// A simple comment
+export const useAuth = () => useContext(AuthContext);

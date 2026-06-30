@@ -1,5 +1,14 @@
-import { createBrowserRouter, useRouteError } from "react-router-dom";
+import { useEffect } from "react";
+import {
+  createBrowserRouter,
+  useRouteError,
+  Outlet,
+  useLocation,
+} from "react-router-dom";
+
 import DashboardLayout from "../components/layout/DashboardLayout";
+import ProtectedRoute from "../components/ProtectedRoute";
+
 import VerificationSuccess from "../pages/auth/VerificationSuccess";
 import Dashboard from "../pages/Dashboard";
 import MyEvents from "../pages/MyEvents";
@@ -11,12 +20,20 @@ import Settings from "../pages/Settings";
 import Login from "../pages/auth/Login";
 import Otp from "../pages/auth/Otp";
 import Signup from "../pages/auth/Signup";
-// import MagicLink from "../pages/auth/MagicLink";
 import Home from "../pages/Home";
 import EventDetails from "../pages/EventDetails";
 import AddGuest from "../pages/AddGuest";
-// import ErrorPage from "../pages/ErrorPage";
 
+// 1. Global wrapper to enforce scroll to top on route changes and reloads
+function RootLayout() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return <Outlet />;
+}
 
 function ErrorHandler() {
   const error = useRouteError();
@@ -34,70 +51,77 @@ function ErrorHandler() {
 
 export const router = createBrowserRouter([
   {
-    path: "/",
-    element: <Home />,
-    errorElement: <ErrorHandler />,
-  },
-  {
-    path: "/login",
-    element: <Login />,
-  },
-  {
-    path: "/signup",
-    element: <Signup />,
-  },
-  // {
-  //   path: "/magic-link",
-  //   element: <MagicLink />,
-  // },
-  {
-    path: "/otp",
-    element: <Otp />,
-  },
-  {
-    path: "/verification-success",
-    element: <VerificationSuccess />,
-  },
-  {
-    path: "/dashboard",
-    element: <DashboardLayout />,
+    element: <RootLayout />,
     errorElement: <ErrorHandler />,
     children: [
       {
-        index: true,
-        element: <Dashboard />,
+        path: "/",
+        element: <Home />,
       },
       {
-        path: "my-events",
-        element: <MyEvents />,
+        path: "/login",
+        element: <Login />,
       },
       {
-        path: "event/:id",
-        element: <EventDetails />,
+        path: "/signup",
+        element: <Signup />,
       },
       {
-        path: "create-event",
-        element: <CreateEvent />,
+        path: "/otp",
+        element: <Otp />,
       },
       {
-        path: "guest-management",
-        element: <GuestManagement />,
+        path: "/verification-success",
+        element: <VerificationSuccess />,
       },
+
       {
-        path: "add-guest",
-        element: <AddGuest />,
-      },
-      {
-        path: "analytics",
-        element: <Analytics />,
-      },
-      {
-        path: "help-center",
-        element: <HelpCenter />,
-      },
-      {
-        path: "settings",
-        element: <Settings />,
+        path: "/dashboard",
+        element: <ProtectedRoute />, //Checks if user is logged in
+        errorElement: <ErrorHandler />,
+        children: [
+          {
+            element: <DashboardLayout />,
+            children: [
+              {
+                index: true,
+                element: <Dashboard />,
+              },
+              {
+                path: "my-events",
+                element: <MyEvents />,
+              },
+              {
+                path: "event/:id",
+                element: <EventDetails />,
+              },
+              {
+                path: "create-event",
+                element: <CreateEvent />,
+              },
+              {
+                path: "guest-management",
+                element: <GuestManagement />,
+              },
+              {
+                path: "add-guest",
+                element: <AddGuest />,
+              },
+              {
+                path: "analytics",
+                element: <Analytics />,
+              },
+              {
+                path: "help-center",
+                element: <HelpCenter />,
+              },
+              {
+                path: "settings",
+                element: <Settings />,
+              },
+            ],
+          },
+        ],
       },
     ],
   },
