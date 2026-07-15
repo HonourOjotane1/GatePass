@@ -1,9 +1,9 @@
 from app.api.v1.models.events import Event, EventStatus, EventVisibility
-from app.api.v1.models.cohost import EventCoHost, CoHostPermission  # was CoHostPermision (typo)
+from app.api.v1.models.cohost import EventCoHost, CoHostPermission
 from app.api.v1.models.user import User
 from app.api.v1.schemas.event import (
     WizardStep1, WizardStep2, WizardStep3, WizardStep4,
-    EventCreate, EventUpdate, CoHostInvite
+    EventCreate, EventUpdate, CoHostInvite, EventVisibility, AccessType
 )
 import re
 from datetime import datetime
@@ -16,8 +16,8 @@ from sqlalchemy.orm import selectinload
 
 # ── Slug generation ────────────────────────────────────────────────────
 
-def generate_slug(title: str, event_id: str) -> str:
-    slug = title.lower().strip()
+def generate_slug(event_name: str, event_id: str) -> str:
+    slug = event_name.lower().strip()
     slug = re.sub(r"[^\w\s-]", "", slug)
     slug = re.sub(r"[\s_-]+", "-", slug)
     slug = re.sub(r"^-+|-+$", "", slug)
@@ -44,17 +44,21 @@ async def _get_own_event(db: AsyncSession, event_id: str, organizer_id: str) -> 
 # ── Wizard steps ───────────────────────────────────────────────────────
 
 async def wizard_step1(db: AsyncSession, organizer_id: str, data: WizardStep1) -> Event:
+    """Step1: Basic info - event_name, description, type, category, cover image."""
     event = Event(
         organizer_id=organizer_id,
-        title=data.title,
+        event_name=data.event_name,
         description=data.description,
+        event_type=data.event_type,
+        category=data.category,
+        cover_image_url=data.cover_image_url,
         status=EventStatus.draft,
         wizard_step=1
     )
     db.add(event)
     await db.commit()
 
-    event.slug = generate_slug(data.title, event.id)
+    event.slug = generate_slug(data.event_name, event.id)
     await db.commit()
 
     result = await db.execute(
@@ -66,14 +70,21 @@ async def wizard_step1(db: AsyncSession, organizer_id: str, data: WizardStep1) -
 
 
 async def wizard_step2(db: AsyncSession, event_id: str, organizer_id: str, data: WizardStep2) -> Event:
+    """Step2: Date, times, venue, virtual toggle."""
     event = await _get_own_event(db, event_id, organizer_id)
 
     if event.wizard_step < 1:
         raise HTTPException(status_code=400, detail="Complete step 1 first.")
 
-    event.location = data.location
+    event.venue_name = data.venue_name
+    event.address = data.address
+    event.location = data.address #in sync for backward compat
+    event.is_virtual = data.is_virtual
+    event.virtual_link = data.virtual_link if data.is_virtual else None
     event.start_time = data.start_time
     event.end_time = data.end_time
+    event.start_date = data.start_date
+    event.end_date = data.end_date
     event.wizard_step = max(event.wizard_step, 2)
     event.updated_at = datetime.utcnow()
     await db.commit()
@@ -82,14 +93,19 @@ async def wizard_step2(db: AsyncSession, event_id: str, organizer_id: str, data:
 
 
 async def wizard_step3(db: AsyncSession, event_id: str, organizer_id: str, data: WizardStep3) -> Event:
+    """Step3: Access type - open, invite-only, or ticketed."""
     event = await _get_own_event(db, event_id, organizer_id)
 
     if event.wizard_step < 2:
         raise HTTPException(status_code=400, detail="Complete step 2 first.")
 
-    event.total_tickets = data.total_tickets
-    event.ticket_price = 0.0 if data.is_free else data.ticket_price
-    event.is_free = data.is_free
+    event.access_type = data.access_type
+    #set visibility to match access type
+    if data.access_type == AccessType.invite_only:
+        event.visibility = EventVisibility.invite_only
+    else:
+        event.visibility = EventVisibility.public
+
     event.wizard_step = max(event.wizard_step, 3)
     event.updated_at = datetime.utcnow()
     await db.commit()
@@ -98,11 +114,22 @@ async def wizard_step3(db: AsyncSession, event_id: str, organizer_id: str, data:
 
 
 async def wizard_step4(db: AsyncSession, event_id: str, organizer_id: str, data: WizardStep4) -> Event:
+    """Step4: Ticketing details and visibility."""
     event = await _get_own_event(db, event_id, organizer_id)
 
     if event.wizard_step < 3:
         raise HTTPException(status_code=400, detail="Complete step 3 first.")
-
+    #validate; a tcketed event must have ticket info
+    if event.access_type == AccessType.ticketed:
+        if not data.ticket_name:
+            raise HTTPException(status_code=400, detail="ticket_name is required for ticketed events.")
+    if not data.is_free and data.ticket_price <= 0:
+        raise HTTPException(status_code=400, detail="ticket_price must be greater than 0 for paid events.")
+    event.ticket_name = data.ticket_name
+    event.ticket_price = 0.0 if data.is_free else data.ticket_price
+    event.total_tickets = data.total_tickets
+    event.ticket_description = data.ticket_description
+    event.is_free = data.is_free
     event.visibility = data.visibility
     event.wizard_step = max(event.wizard_step, 4)
     event.updated_at = datetime.utcnow()
@@ -114,19 +141,27 @@ async def wizard_step4(db: AsyncSession, event_id: str, organizer_id: str, data:
 # ── Publishing ─────────────────────────────────────────────────────────
 
 async def publish_event(db: AsyncSession, event_id: str, organizer_id: str) -> Event:
+    """Final validation and publish."""
     event = await _get_own_event(db, event_id, organizer_id)
 
     errors = []
-    if not event.title:
-        errors.append("title is required.")
+    if not event.event_name:
+        errors.append("event name is required.")
     if not event.location:
         errors.append("location is required.")
-    if not event.start_time:
-        errors.append("start_time is required.")
-    if not event.end_time:
-        errors.append("end_time is required.")
+    if not event.start_date or not event.start_time:
+        errors.append("start_date and start_time are required.")
+    if not event.end_date or not event.end_time:
+        errors.append("end_date and end_time are required.")
     if event.start_time and event.end_time and event.start_time >= event.end_time:
         errors.append("start_time must be before end_time.")
+    if not event.is_virtual and not event.address:
+        errors.append("address is required for non-virtual events.")
+    if event.access_type == AccessType.ticketed:
+        if event.total_tickets <= 0:
+            errors.append("total_tickets must be greater than 0 for ticketed events.")
+            if not event.is_free and event.ticket_price <= 0:
+                errors.append("ticket_price must be greater than 0 for paid events.")
     if event.total_tickets <= 0:
         errors.append("total_tickets must be greater than 0.")
     if not event.is_free and event.ticket_price <= 0:
@@ -153,7 +188,7 @@ async def save_draft(db: AsyncSession, event_id: str, organizer_id: str, data: d
     event = await _get_own_event(db, event_id, organizer_id)
 
     allowed_fields = [
-        "title", "description", "location", "start_time",
+        "event_name", "description", "location", "start_time",
         "end_time", "total_tickets", "ticket_price", "is_free", "visibility"
     ]
     for field, value in data.items():
@@ -178,11 +213,20 @@ async def create_event(db: AsyncSession, organizer_id: str, data: EventCreate) -
 
     event = Event(
         organizer_id=organizer_id,
-        title=data.title,
+        event_name=data.event_name,
         description=data.description,
-        location=data.location,
+        event_type=data.event_type,
+        category=data.category,
+        cover_image_url=data.cover_image_url,
+        venue_name=data.venue_name,
+        address=data.address,
+        location=data.address,
+        is_virtual=data.is_virtual,
+        virtual_link=data.virtual_link,
         start_time=data.start_time,
         end_time=data.end_time,
+        access_type=data.access_type,
+        ticket_name=data.ticket_name,
         total_tickets=data.total_tickets,
         ticket_price=data.ticket_price,
         is_free=data.is_free,
@@ -192,12 +236,16 @@ async def create_event(db: AsyncSession, organizer_id: str, data: EventCreate) -
     )
     db.add(event)
     await db.commit()
-    await db.refresh(event)
 
-    event.slug = generate_slug(data.title, event.id)
+    event.slug = generate_slug(data.event_name, event.id)
     await db.commit()
-    await db.refresh(event)
-    return event
+
+    result = await db.execute(
+        select(Event)
+        .options(selectinload(Event.co_hosts))
+        .where(Event.id == event.id)
+    )
+    return result.scalar_one()
 
 
 # ── List & pagination ──────────────────────────────────────────────────
@@ -274,7 +322,7 @@ async def get_event_stats(db: AsyncSession, event_id: str, organizer_id: str) ->
 
     return {
         "event_id": event.id,
-        "title": event.title,
+        "event_name": event.event_name,
         "tickets_sold": event.tickets_sold,
         "total_tickets": event.total_tickets,
         "check_ins": event.check_ins,

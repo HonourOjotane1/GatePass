@@ -41,10 +41,10 @@ def send_otp(email: str, code: str):
 
 # ── Guest / RSVP emails ────────────────────────────────────────────────
 
-def send_rsvp_invitation_email(email: str, guest_name: str, event_title: str, rsvp_link: str):
+def send_rsvp_invitation_email(email: str, guest_name: str, event_name: str, rsvp_link: str):
     body = f"""Hi {guest_name or 'there'},
 
-You're invited to {event_title}!
+You're invited to {event_name}!
 
 Please confirm your attendance by clicking the link below:
 
@@ -56,23 +56,23 @@ See you there!
 The GatePass Team"""
     _send_email(
         to=email,
-        subject=f"You're invited to {event_title}",
+        subject=f"You're invited to {event_name}",
         body=body
     )
 
 
-def send_rsvp_confirmation_email(email: str, guest_name: str, event_title: str):
+def send_rsvp_confirmation_email(email: str, guest_name: str, event_name: str):
     # _send_email is eliminates the repeated SMTP block such that any future email simply calls _send_email with the appropriate parameters with a subject and body.
     _send_email(
         to=email,
-        subject=f"RSVP Confirmed — {event_title}",
-        body=f"Hi {guest_name or 'there'},\n\nYour RSVP for {event_title} is confirmed. See you there!\n\nThe GatePass Team"
+        subject=f"RSVP Confirmed — {event_name}",
+        body=f"Hi {guest_name or 'there'},\n\nYour RSVP for {event_name} is confirmed. See you there!\n\nThe GatePass Team"
     )
 
 
-def send_waitlist_promotion_email(email: str, guest_name: str, event_title: str, rsvp_link: str):
+def send_waitlist_promotion_email(email: str, guest_name: str, event_name: str, rsvp_link: str):
     _send_email(
         to=email,
-        subject=f"A spot opened up — {event_title}",
-        body=f"Hi {guest_name or 'there'},\n\nGreat news! A spot has opened up for {event_title}.\n\nConfirm your attendance here:\n{rsvp_link}\n\nThis offer expires in 24 hours.\n\nThe GatePass Team"
+        subject=f"A spot opened up — {event_name}",
+        body=f"Hi {guest_name or 'there'},\n\nGreat news! A spot has opened up for {event_name}.\n\nConfirm your attendance here:\n{rsvp_link}\n\nThis offer expires in 24 hours.\n\nThe GatePass Team"
     )

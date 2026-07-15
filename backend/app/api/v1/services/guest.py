@@ -163,24 +163,24 @@ async def invite_guest(
         email=data.email,
         phone=data.phone_number,
         guest_name=guest_name,
-        event_title=event.title,
+        event_name=event.event_name,
         rsvp_link=rsvp_link
     )
 
     return guest
 
 
-def _dispatch_invite(method, email, phone, guest_name, event_title, rsvp_link):
+def _dispatch_invite(method, email, phone, guest_name, event_name, rsvp_link):
     """Send invite via email, SMS, or both. Silently fails in dev if SMTP not configured."""
     try:
         if method in (InviteMethod.email, InviteMethod.both) and email:
-            send_rsvp_invitation_email(email, guest_name, event_title, rsvp_link)
+            send_rsvp_invitation_email(email, guest_name, event_name, rsvp_link)
     except Exception as e:
         print(f"[EMAIL ERROR] {e}")
 
     try:
         if method in (InviteMethod.sms, InviteMethod.both) and phone:
-            send_rsvp_invitation_sms(phone, guest_name, event_title, rsvp_link)
+            send_rsvp_invitation_sms(phone, guest_name, event_name, rsvp_link)
     except Exception as e:
         print(f"[SMS ERROR] {e}")
 
@@ -260,7 +260,7 @@ async def respond_to_rsvp(db: AsyncSession, data: RSVPResponse) -> Guest:
                 send_rsvp_confirmation_email(
                     guest.email,
                     f"{guest.first_name or ''} {guest.last_name or ''}".strip(),
-                    event.title
+                    event.event_name
                 )
             except Exception as e:
                 print(f"[EMAIL ERROR] {e}")
@@ -272,7 +272,7 @@ async def respond_to_rsvp(db: AsyncSession, data: RSVPResponse) -> Guest:
 
         # auto-promote first person on waitlist if they were confirmed
         if previous_status == RSVPStatus.confirmed:
-            await _promote_from_waitlist(db, guest.event_id, event.title)
+            await _promote_from_waitlist(db, guest.event_id, event.event_name)
 
     guest.rsvp_responded_at = datetime.utcnow()
     await db.commit()
@@ -282,7 +282,7 @@ async def respond_to_rsvp(db: AsyncSession, data: RSVPResponse) -> Guest:
 
 # ── Waitlist auto-promote ──────────────────────────────────────────────
 
-async def _promote_from_waitlist(db: AsyncSession, event_id: str, event_title: str):
+async def _promote_from_waitlist(db: AsyncSession, event_id: str, event_name: str):
     """Promote the first person on the waitlist when a spot opens."""
     result = await db.execute(
         select(Guest).where(
@@ -310,13 +310,13 @@ async def _promote_from_waitlist(db: AsyncSession, event_id: str, event_title: s
     # notify them
     try:
         if next_guest.email:
-            send_waitlist_promotion_email(next_guest.email, guest_name, event_title, rsvp_link)
+            send_waitlist_promotion_email(next_guest.email, guest_name, event_name, rsvp_link)
     except Exception as e:
         print(f"[EMAIL ERROR] {e}")
 
     try:
         if next_guest.phone_number:
-            send_waitlist_promotion_sms(next_guest.phone_number, guest_name, event_title, rsvp_link)
+            send_waitlist_promotion_sms(next_guest.phone_number, guest_name, event_name, rsvp_link)
     except Exception as e:
         print(f"[SMS ERROR] {e}")
 
@@ -370,7 +370,7 @@ async def update_guest_status(
     guest.updated_at = datetime.utcnow()
 
     if new_status == RSVPStatus.declined and previous_status == RSVPStatus.confirmed:
-        await _promote_from_waitlist(db, event_id, (await _get_event(db, event_id)).title)
+        await _promote_from_waitlist(db, event_id, (await _get_event(db, event_id)).event_name)
 
     await db.commit()
     await db.refresh(guest)
@@ -470,7 +470,7 @@ async def remove_guest(
     await db.commit()
 
     if was_confirmed:
-        await _promote_from_waitlist(db, event_id, event.title)
+        await _promote_from_waitlist(db, event_id, event.event_name)
 
     return {"message": "Guest removed successfully."}
 
@@ -511,7 +511,7 @@ async def resend_invite(
         email=guest.email,
         phone=guest.phone_number,
         guest_name=guest_name,
-        event_title=event.title,
+        event_name=event.event_name,
         rsvp_link=rsvp_link
     )
 

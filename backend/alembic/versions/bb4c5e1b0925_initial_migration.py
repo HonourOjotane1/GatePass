@@ -1,8 +1,8 @@
-"""initial migration
+"""initial_migration
 
-Revision ID: d80055f16204
+Revision ID: bb4c5e1b0925
 Revises: 
-Create Date: 2026-06-06 15:56:53.016592
+Create Date: 2026-07-15 16:15:21.690947
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'd80055f16204'
+revision: str = 'bb4c5e1b0925'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -40,19 +40,31 @@ def upgrade() -> None:
     op.create_table('events',
     sa.Column('id', sa.String(length=36), nullable=False),
     sa.Column('organizer_id', sa.String(length=36), nullable=False),
-    sa.Column('title', sa.String(length=200), nullable=False),
-    sa.Column('slug', sa.String(length=250), nullable=True),
+    sa.Column('event_name', sa.String(length=200), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
+    sa.Column('event_type', sa.Enum('conference', 'concert', 'workshop', 'party', 'sports', 'networking', 'other', name='eventtype'), nullable=True),
+    sa.Column('category', sa.Enum('music', 'tech', 'business', 'arts', 'food', 'sports', 'education', 'other', name='eventcategory'), nullable=True),
+    sa.Column('cover_image_url', sa.String(length=500), nullable=True),
+    sa.Column('venue_name', sa.String(length=200), nullable=True),
+    sa.Column('address', sa.String(length=300), nullable=True),
     sa.Column('location', sa.String(length=300), nullable=True),
-    sa.Column('start_time', sa.DateTime(), nullable=True),
-    sa.Column('end_time', sa.DateTime(), nullable=True),
+    sa.Column('is_virtual', sa.Boolean(), nullable=True),
+    sa.Column('virtual_link', sa.String(length=500), nullable=True),
+    sa.Column('start_time', sa.Time(), nullable=True),
+    sa.Column('end_time', sa.Time(), nullable=True),
+    sa.Column('start_date', sa.Date(), nullable=True),
+    sa.Column('end_date', sa.Date(), nullable=True),
+    sa.Column('access_type', sa.Enum('open', 'invite_only', 'ticketed', name='accesstype'), nullable=False),
+    sa.Column('ticket_name', sa.String(length=100), nullable=True),
+    sa.Column('ticket_price', sa.Float(), nullable=True),
+    sa.Column('total_tickets', sa.Integer(), nullable=True),
+    sa.Column('ticket_description', sa.Text(), nullable=True),
+    sa.Column('is_free', sa.Boolean(), nullable=True),
+    sa.Column('slug', sa.String(length=250), nullable=True),
     sa.Column('status', sa.Enum('draft', 'published', 'ongoing', 'completed', 'cancelled', name='eventstatus'), nullable=False),
     sa.Column('visibility', sa.Enum('public', 'private', 'invite_only', name='eventvisibility'), nullable=False),
-    sa.Column('total_tickets', sa.Integer(), nullable=True),
     sa.Column('tickets_sold', sa.Integer(), nullable=True),
-    sa.Column('ticket_price', sa.Float(), nullable=True),
     sa.Column('check_ins', sa.Integer(), nullable=True),
-    sa.Column('is_free', sa.Boolean(), nullable=True),
     sa.Column('wizard_step', sa.Integer(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('updated_at', sa.DateTime(), nullable=True),

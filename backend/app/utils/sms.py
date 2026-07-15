@@ -37,11 +37,11 @@ def send_sms(phone_number: str, message: str):
     response.raise_for_status()
 
 
-def send_rsvp_invitation_sms(phone_number: str, guest_name: str, event_title: str, rsvp_link: str):
-    message = f"Hi {guest_name or 'there'}, you're invited to {event_title}! RSVP here: {rsvp_link}"
+def send_rsvp_invitation_sms(phone_number: str, guest_name: str, event_name: str, rsvp_link: str):
+    message = f"Hi {guest_name or 'there'}, you're invited to {event_name}! RSVP here: {rsvp_link}"
     send_sms(phone_number, message)
 
 
-def send_waitlist_promotion_sms(phone_number: str, guest_name: str, event_title: str, rsvp_link: str):
-    message = f"Hi {guest_name or 'there'}, a spot opened up at {event_title}! Confirm here: {rsvp_link}"
+def send_waitlist_promotion_sms(phone_number: str, guest_name: str, event_name: str, rsvp_link: str):
+    message = f"Hi {guest_name or 'there'}, a spot opened up at {event_name}! Confirm here: {rsvp_link}"
     send_sms(phone_number, message)

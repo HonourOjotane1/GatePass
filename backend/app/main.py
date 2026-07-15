@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles #static file serving main for uploaded image accessibility.
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.routes.user import user_router
 from app.api.v1.routes.guests import guest_router
@@ -9,11 +10,17 @@ from app.api.v1.models.access_control import (
     EventZone, ZoneAccessRule, GuestQRCode,
     CheckInLog, EventStaffAssignment
 )
+from app.api.v1.models.guest_session import GuestSession
+from app.api.v1.routes.public_event import public_router
 
 from app.core.middleware import SecurityHeadersMiddleware, BlockedIPMiddleware
 import os
 
+
 app = FastAPI()
+
+os.makedirs("uploads/covers", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 #CORS
 origins = [
@@ -35,11 +42,14 @@ app.add_middleware(BlockedIPMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 
 
+
+
 app.include_router(user_router, prefix="/users", tags=["Users"])
 app.include_router(guest_router, prefix="/guests", tags=["Guests"])
 app.include_router(auth_router, prefix="/auth", tags=["Auth"])
 app.include_router(event_router, prefix="/events", tags=["Events"])
 app.include_router(access_router, prefix="/access", tags=["Access Control"])
+app.include_router(public_router, prefix="/e", tags=["Public Events"]) #no auth prefix, fully public
 
 
 @app.get("/")

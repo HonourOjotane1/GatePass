@@ -1,17 +1,30 @@
-from datetime import datetime
+from datetime import date, time, datetime
 import uuid
 from sqlalchemy.orm import relationship
-from sqlalchemy import Boolean, Column, Enum, Float, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Enum,
+    Float,
+    Integer,
+    String,
+    Text,
+    DateTime,
+    Date,
+    Time,
+    ForeignKey,
+)
 import enum
 from app.db.database import Base
 
 
 class EventStatus(str, enum.Enum):
     draft = "draft"
-    published= "published"
+    published = "published"
     ongoing = "ongoing"
     completed = "completed"
     cancelled = "cancelled"
+
 
 class EventVisibility(str, enum.Enum):
     public = "public"
@@ -19,38 +32,95 @@ class EventVisibility(str, enum.Enum):
     invite_only = "invite_only"
 
 
+class EventType(str, enum.Enum):
+    conference = "conference"
+    concert = "concert"
+    workshop = "workshop"
+    party = "party"
+    sports = "sports"
+    networking = "networking"
+    other = "other"
+
+
+class EventCategory(str, enum.Enum):
+    music = "music"
+    tech = "tech"
+    business = "business"
+    arts = "arts"
+    food = "food"
+    sports = "sports"
+    education = "education"
+    other = "other"
+
+
+class AccessType(str, enum.Enum):
+    open = "open"
+    invite_only = "invite_only"
+    ticketed = "ticketed"
+
+
 class Event(Base):
     __tablename__ = "events"
 
-    id = Column(String(36), primary_key=True,default=lambda: str(uuid.uuid4()))
-    organizer_id = Column(String(36), ForeignKey("organizers.id"), nullable=False)  # foreign_key to organizer
-    title = Column(String(200), nullable=False)
-    slug = Column(String(250), unique=True, nullable=True)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    organizer_id = Column(
+        String(36), ForeignKey("organizers.id"), nullable=False
+    )  # foreign_key to organizer
+
+    # Step1 fields
+    event_name = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
+    event_type = Column(Enum(EventType), nullable=True)
+    category = Column(Enum(EventCategory), nullable=True)
+    cover_image_url = Column(String(500), nullable=True)  # stored URL after upload
+
+    # Step2 fields
+    venue_name = Column(String(200), nullable=True)
+    address = Column(String(300), nullable=True)
     location = Column(String(300), nullable=True)
-    start_time = Column(DateTime, nullable=True) # nullable for wizard draft support
-    end_time = Column(DateTime, nullable=True) # nullable for wizard draft support 
-    status = Column(Enum(EventStatus), default=EventStatus.draft, nullable=False)
-    visibility = Column(Enum(EventVisibility), default=EventVisibility.public, nullable=False)
-    total_tickets = Column(Integer, default=0)
-    tickets_sold = Column(Integer, default=0)
+    is_virtual = Column(Boolean, default=False)
+    virtual_link = Column(String(500), nullable=True)
+    start_time = Column(Time, nullable=True)  # nullable for wizard draft support
+    end_time = Column(Time, nullable=True)  # nullable for wizard draft support
+    start_date = Column(Date, nullable=True)
+    end_date = Column(Date, nullable=True)
+
+    # Step3 fields
+    access_type = Column(Enum(AccessType), default=AccessType.open, nullable=False)
+
+    # Step4 fields
+    ticket_name = Column(String(100), nullable=True)
     ticket_price = Column(Float, default=0.0)
-    check_ins = Column(Integer, default=0)
+    total_tickets = Column(Integer, default=0)
+    ticket_description = Column(Text, nullable=True)
     is_free = Column(Boolean, default=False)
-    wizard_step = Column(Integer, default=1) # tracks how far wizard has progressed
+
+    slug = Column(String(250), unique=True, nullable=True)
+    status = Column(Enum(EventStatus), default=EventStatus.draft, nullable=False)
+    visibility = Column(
+        Enum(EventVisibility), default=EventVisibility.public, nullable=False
+    )
+    tickets_sold = Column(Integer, default=0)
+    check_ins = Column(Integer, default=0)
+    wizard_step = Column(Integer, default=1)  # tracks how far wizard has progressed
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     organizer = relationship("User", foreign_keys=[organizer_id], backref="events")
-    co_hosts = relationship("EventCoHost", back_populates="event", cascade="all, delete-orphan", lazy="raise")
+    co_hosts = relationship(
+        "EventCoHost",
+        back_populates="event",
+        cascade="all, delete-orphan",
+        lazy="raise",
+    )
 
 
-#TO-DO; CREATE A PYDANTIC MODEL FOR DRAFT SUCH THAT PAYLOAD CAN PASS A DICT!
+# TO-DO; CREATE A PYDANTIC MODEL FOR DRAFT SUCH THAT PAYLOAD CAN PASS A DICT!
 
-    # # relationship to organizer
-    # organizer = relationship("Organizer", back_populates="events")
-    # # relatiosnhip to guests
-    # guest = relationship("Guests", back_populates="events")
+# # relationship to organizer
+# organizer = relationship("Organizer", back_populates="events")
+# # relatiosnhip to guests
+# guest = relationship("Guests", back_populates="events")
 
 
 # class TicketTier(Base):
@@ -98,5 +168,3 @@ class Event(Base):
 
 #     # relationship to events
 #     events = relationship("events", back_populates="branding")
-
-

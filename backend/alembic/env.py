@@ -6,10 +6,19 @@ import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+
+
 from app.db.database import Base
 from app.api.v1.models import user, events, guest, cohost, magic_link, otp
 
 config = context.config
+
+from dotenv import load_dotenv
+load_dotenv()
+
+db_url = os.getenv("DATABASE_URL", "").replace("postgresql+asyncpg://", "postgresql://")
+config.set_main_option("sqlalchemy.url", db_url)
+
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
