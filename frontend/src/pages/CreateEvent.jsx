@@ -1,14 +1,16 @@
 import { useState } from "react";
-import { ArrowLeft, ChevronDown, Upload, Calendar, Clock } from "lucide-react";
+import { ArrowLeft, ChevronDown, Upload, Calendar, Clock, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import FeedbackModal from "../components/FeedbackModal";
 import SuccessIcon from "../assets/icons/success-badge.svg";
+import api from "../utils/api";
 
 const CreateEvent = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isPublished, setIsPublished] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
-  // Master form state
   const [formData, setFormData] = useState({
     // Step 1
     eventName: "",
@@ -66,10 +68,53 @@ const CreateEvent = () => {
     }
   };
 
-  const handlePublish = () => {
-    // Add API call here
-    console.log("Publishing Event...", formData);
-    setIsPublished(true);
+const handlePublish = async () => {
+    setSubmitError("");
+    setIsSubmitting(true);
+
+    try {
+      const start_datetime = new Date(`${formData.startDate}T${formData.startTime}:00`).toISOString();
+      
+      let end_datetime = null;
+      if (formData.endDate && formData.endTime) {
+        end_datetime = new Date(`${formData.endDate}T${formData.endTime}:00`).toISOString();
+      }
+
+      const payload = {
+        title: formData.eventName,
+        description: formData.eventDescription,
+        start_datetime,
+        end_datetime,
+        location: `${formData.venueName}, ${formData.address}`.trim(),
+        is_private: formData.accessType === "invite",
+        capacity: formData.ticketQuantity ? parseInt(formData.ticketQuantity) : null,
+      };
+
+      const response = await api.post("/events/", payload);
+      
+      setIsPublished(true);
+    } catch (err) {
+      console.error("Publishing error:", err);
+      
+      let errorMessage = "Failed to publish the event. Please ensure all required fields are filled out.";
+      
+      if (err.response && err.response.data && err.response.data.detail) {
+        const detail = err.response.data.detail;
+        
+        if (typeof detail === "string") {
+          errorMessage = detail;
+        } else if (Array.isArray(detail)) {
+          errorMessage = detail.map(errObj => {
+            const field = errObj.loc ? errObj.loc[errObj.loc.length - 1] : "Field";
+            return `${field}: ${errObj.msg}`;
+          }).join(" | ");
+        }
+      }
+      
+      setSubmitError(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const progress = (currentStep / 5) * 100;
@@ -148,6 +193,8 @@ const CreateEvent = () => {
               form={formData}
               onEdit={() => setCurrentStep(1)}
               onPublish={handlePublish}
+              isSubmitting={isSubmitting}
+              error={submitError}
             />
           )}
 
@@ -524,7 +571,7 @@ const Step4 = ({ form, update }) => {
               Quantity <span className="text-[#DB2F40]">*</span>
             </label>
             <input
-              type="text"
+              type="number"
               value={form.ticketQuantity}
               onChange={(e) => update("ticketQuantity", e.target.value)}
               placeholder="Enter quantity"
@@ -630,10 +677,16 @@ const Step4 = ({ form, update }) => {
   return null;
 };
 
-const Step5 = ({ form, onEdit, onPublish }) => (
+const Step5 = ({ form, onEdit, onPublish, isSubmitting, error }) => (
   <div className="animate-in fade-in slide-in-from-right-4 duration-300">
     <h2 className="text-3xl font-bold text-slate-900 mb-2">Review & Publish</h2>
     <p className="text-slate-400 mb-10">Confirm all details.</p>
+
+    {error && (
+      <div className="mb-8 p-4 bg-red-50 text-red-600 border border-red-200 rounded-xl">
+        {error}
+      </div>
+    )}
 
     <div className="grid grid-cols-1 md:grid-cols-3 gap-y-10 gap-x-4 mb-12">
       <ReviewItem label="Event Name" value={form.eventName} />
@@ -681,15 +734,18 @@ const Step5 = ({ form, onEdit, onPublish }) => (
     <div className="flex gap-4">
       <button
         onClick={onEdit}
-        className="flex-1 py-4 border border-[#6B4EFF] text-[#6B4EFF] font-bold rounded-xl hover:bg-[#6B4EFF]/5 transition-colors cursor-pointer"
+        disabled={isSubmitting}
+        className="flex-1 py-4 border border-[#6B4EFF] text-[#6B4EFF] font-bold rounded-xl hover:bg-[#6B4EFF]/5 transition-colors cursor-pointer disabled:opacity-50"
       >
         Edit
       </button>
       <button
         onClick={onPublish}
-        className="flex-1 py-4 bg-[#6B4EFF] text-white font-bold rounded-xl hover:shadow-lg hover:bg-[#583DD9] transition-all cursor-pointer"
+        disabled={isSubmitting}
+        className="flex-1 py-4 flex justify-center items-center gap-2 bg-[#6B4EFF] text-white font-bold rounded-xl hover:shadow-lg hover:bg-[#583DD9] transition-all cursor-pointer disabled:bg-[#6B4EFF]/70"
       >
-        Publish Event
+        {isSubmitting && <Loader2 className="animate-spin" size={20} />}
+        {isSubmitting ? "Publishing..." : "Publish Event"}
       </button>
     </div>
   </div>

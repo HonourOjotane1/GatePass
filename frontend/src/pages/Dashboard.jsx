@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Checkins from "../assets/icons/Checkins.svg";
 import RSVPrate from "../assets/icons/RSVPrate.svg";
 import Totalevents from "../assets/icons/Totalevents.svg";
@@ -6,7 +6,7 @@ import Totalguests from "../assets/icons/Totalguests.svg";
 import dashboardbanner from "../assets/dashboardbanner.png";
 import Eventsaround from "../assets/Eventsaround.png";
 import rafiki from "../assets/rafiki.svg";
-import user from "../assets/user.png";
+import userImg from "../assets/user.png";
 import emptyStateImg from "../assets/guest-empty-state.svg";
 
 import {
@@ -16,18 +16,68 @@ import {
   MapPin,
   ChevronDown,
   TimerIcon,
+  Loader2
 } from "lucide-react";
 import { NavLink, Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import api from "../utils/api";
 
 const Dashboard = () => {
-  const [isEmpty, setIsEmpty] = useState(true);
+  const { user } = useAuth();
+  
+  const [stats, setStats] = useState({
+    total_events: 0,
+    total_guests: 0,
+    upcoming_events_count: 0
+  });
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
+  
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // Determine if the user has any events
+  const isEmpty = stats.total_events === 0;
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        
+        const statsResponse = await api.get('/events/dashboard');
+        setStats(statsResponse.data);
+
+        if (statsResponse.data.total_events > 0) {
+            const eventsResponse = await api.get('/events/');
+            setUpcomingEvents(eventsResponse.data.events || []); 
+        }
+
+      } catch (err) {
+        console.error("Error fetching dashboard data:", err);
+        setError("Failed to load dashboard data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex h-[calc(100vh-5rem)] w-full items-center justify-center bg-gray-50">
+        <Loader2 className="animate-spin text-[#6B4EFF] w-10 h-10" />
+      </div>
+    );
+  }
 
   return (
     <>
       {/* HEADER */}
       <header className="h-20 bg-white shadow py-4 px-10 flex items-center justify-between sticky top-0 z-20 font-poppins">
         <div className="flex items-center gap-8 flex-1">
-          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <h1 className="text-2xl font-bold">
+            Welcome, {user?.first_name || user?.username || 'Organizer'}
+          </h1>
           <div className="relative w-full max-w-lg">
             <Search
               className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
@@ -46,7 +96,7 @@ const Dashboard = () => {
             <Bell size={20} fill="#6B4EFF" stroke="false" />
           </button>
           <div className="flex items-center gap-3 pl-2 cursor-pointer">
-            <img src={user} alt="User" className="w-9 h-9 rounded-full object-cover" />
+            <img src={userImg} alt="User" className="w-9 h-9 rounded-full object-cover" />
             <ChevronDown size={16} className="text-slate-400" />
           </div>
         </div>
@@ -54,16 +104,13 @@ const Dashboard = () => {
 
       {/* DASHBOARD CONTENT */}
       <div className="relative p-10 space-y-8 font-poppins">
+        
+        {error && (
+            <div className="p-4 bg-red-50 text-red-600 rounded-xl border border-red-100">
+                {error}
+            </div>
+        )}
 
-     {/* TEMPORARY DEV TOGGLE (will be removed in production) */}
-        <div className="absolute right-15 top-40 z-10 flex justify-end -mb-4">
-           <button 
-             onClick={() => setIsEmpty(!isEmpty)} 
-             className="text-xs bg-slate-200 px-3 py-1 rounded hover:bg-slate-300 cursor-pointer transition-colors"
-           >
-             {isEmpty ? "Show Filled State" : "Show Empty State"}
-           </button>
-        </div>
         {/* STATS SECTION */}
         <div className="grid grid-cols-4 gap-6">
           {/* Stat 1 */}
@@ -72,7 +119,7 @@ const Dashboard = () => {
                <img src={Totalevents} alt="Events" className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="text-2xl font-bold text-slate-900">{isEmpty ? "-" : "12"}</h4>
+              <h4 className="text-2xl font-bold text-slate-900">{stats.total_events}</h4>
               <p className="text-[11px] font-medium text-slate-400 uppercase mt-0.5">
                 Total Events
               </p>
@@ -90,7 +137,7 @@ const Dashboard = () => {
                <img src={Totalguests} alt="Guests" className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="text-2xl font-bold text-slate-900">{isEmpty ? "-" : "1,720"}</h4>
+              <h4 className="text-2xl font-bold text-slate-900">{stats.total_guests ? stats.total_guests : "-"}</h4>
               <p className="text-[11px] font-medium text-slate-400 uppercase mt-0.5">
                 Total Guests Invited
               </p>
@@ -102,7 +149,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Stat 3 */}
+          {/* Stat 3 (Placeholder data until API provides the data) */}
           <div className="bg-white p-6 rounded-3xl border border-slate-100 flex items-center gap-5 shadow-sm">
             <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center shrink-0">
                <img src={RSVPrate} alt="RSVP" className="w-6 h-6" />
@@ -120,7 +167,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Stat 4 */}
+          {/* Stat 4 (Placeholder data until API provides the data) */}
           <div className="bg-white p-6 rounded-3xl border border-slate-100 flex items-center gap-5 shadow-sm">
             <div className="w-12 h-12 bg-[#6B4EFF]/10 rounded-xl flex items-center justify-center shrink-0">
                <img src={Checkins} alt="Checkin" className="w-6 h-6" />
@@ -142,9 +189,8 @@ const Dashboard = () => {
         {/* CONDITIONALLY RENDER EMPTY OR FILLED STATE */}
         {isEmpty ? (
           
-          /* --- EMPTY STATE --- */
+          /* EMPTY STATE */
           <div className="flex flex-col items-center justify-center py-20 mt-8 bg-white rounded-3xl border border-slate-100 shadow-sm min-h-[500px]">
-            {/* If you haven't imported the exact illustration yet, this placeholder loads safely */}
             <img 
               src={emptyStateImg || "https://via.placeholder.com/400x300/ffffff/e2e8f0?text=No+Event+Illustration"} 
               alt="No Events" 
@@ -169,47 +215,50 @@ const Dashboard = () => {
 
         ) : (
           
-          /* --- FILLED STATE --- */
+          /* FILLED STATE */
           <>
             {/* MIDDLE SECTION */}
             <div className="flex gap-4">
-              {/* Banner Card */}
+              {/* Banner Card - Using the first upcoming event as the featured event */}
               <div className="w-full max-w-3/5 col-span-2 relative rounded-3xl overflow-hidden bg-slate-900 min-h-[280px] flex group shadow-sm">
                 <img
-                  src={dashboardbanner}
-                  alt="A group of people holding a meeting"
+                  src={upcomingEvents[0]?.cover_image_url || dashboardbanner}
+                  alt="Event Banner"
                   className="absolute w-full h-full object-cover"
                 />
                 <div className="relative z-10 py-6 px-8 flex flex-col justify-between text-white w-full bg-gradient-to-t from-black/80 to-transparent">
                   <div className="flex justify-between items-center w-full">
                     <h2 className="text-3xl font-semibold mb-4">
-                      Startup Connect Meetup
+                      {upcomingEvents[0]?.title || "Upcoming Event"}
                     </h2>
                     <span className="text-xs font-semibold uppercase tracking-widest mb-2">
                       Your Next Event
                     </span>
                   </div>
-                  <p className="text-sm opacity-70 max-w-md leading-relaxed">
-                    Startup Connect Meetup is a curated gathering designed to bring
-                    together founders, early-stage entrepreneurs, investors, and
-                    industry leaders.
+                  <p className="text-sm opacity-70 max-w-md leading-relaxed line-clamp-2">
+                    {upcomingEvents[0]?.description || "Get ready for your upcoming event."}
                   </p>
                   <div className="flex flex-col gap-2 text-sm">
                     <div className="flex gap-5">
                       <span className="flex items-center gap-2">
-                        <Calendar size={16} /> Sat, 23rd Nov, 2025
+                        <Calendar size={16} /> 
+                        {upcomingEvents[0]?.start_datetime ? new Date(upcomingEvents[0].start_datetime).toLocaleDateString() : 'TBD'}
                       </span>
                       <span className="flex items-center gap-2">
-                        <TimerIcon size={16} /> Sat, 23rd 2:00pm
+                        <TimerIcon size={16} /> 
+                        {upcomingEvents[0]?.start_datetime ? new Date(upcomingEvents[0].start_datetime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'TBD'}
                       </span>
                     </div>
                     <span className="flex items-center gap-2">
-                      <MapPin size={16} /> Landmark Event Centre, Lagos
+                      <MapPin size={16} /> {upcomingEvents[0]?.location || 'TBD'}
                     </span>
                   </div>
-                  <button className="absolute right-10 bottom-10 bg-white text-[#6B4EFF] px-8 py-3 rounded-xl font-bold text-xs hover:shadow-xl transition-all cursor-pointer">
+                  <Link 
+                    to={`/dashboard/event/${upcomingEvents[0]?.id}`}
+                    className="absolute right-10 bottom-10 bg-white text-[#6B4EFF] px-8 py-3 rounded-xl font-bold text-xs hover:shadow-xl transition-all cursor-pointer"
+                  >
                     Event Details
-                  </button>
+                  </Link>
                 </div>
               </div>
 
@@ -249,48 +298,22 @@ const Dashboard = () => {
                 </div>
 
                 <div className="divide-y divide-slate-50">
-                  <EventItem
-                    title="Startup Connect Meetup"
-                    date="Sat, 23rd Nov 2025"
-                    loc="Landmark Event Centre"
-                    rsvp="124/150"
-                    progress={82}
-                  />
-                  <EventItem
-                    title="Tech Innovators Summit 2025"
-                    date="Fri, 27th Nov 2025"
-                    loc="Eko Hotel, Lagos"
-                    rsvp="300/350"
-                    progress={85}
-                  />
-                  <EventItem
-                    title="Wedding Expo Africa 2025"
-                    date="Sat, 6th Dec 2025"
-                    loc="Tafawa Balewa Square"
-                    rsvp="100/400"
-                    progress={25}
-                  />
-                  <EventItem
-                    title="Lagos Live Music Fest 2025"
-                    date="Wed, 10th Dec 2025"
-                    loc="Civic Centre, Lagos"
-                    rsvp="900/1000"
-                    progress={90}
-                  />
-                  <EventItem
-                    title="HealthTech Innovation Forum"
-                    date="Fri, 19th Dec 2025"
-                    loc="Oriental Hotel, Lagos"
-                    rsvp="300/500"
-                    progress={65}
-                  />
-                  <EventItem
-                    title="Africa Fashion Week Showcase"
-                    date="Fri, 19th Dec 2025"
-                    loc="Oriental Hotel, Lagos"
-                    rsvp="50/450"
-                    progress={12}
-                  />
+                  {upcomingEvents.length > 0 ? (
+                    upcomingEvents.slice(0, 5).map((event) => (
+                      <EventItem
+                        key={event.id}
+                        id={event.id}
+                        title={event.title}
+                        date={new Date(event.start_datetime).toLocaleDateString()}
+                        loc={event.location || "TBA"}
+                        // Placeholder RSVP logic until endpoint is connected
+                        rsvp="0/0" 
+                        progress={0}
+                      />
+                    ))
+                  ) : (
+                    <p className="text-sm text-slate-500 py-4">No upcoming events found.</p>
+                  )}
                 </div>
               </div>
 
@@ -338,16 +361,16 @@ const Dashboard = () => {
   );
 };
 
-const EventItem = ({ title, date, loc, rsvp, progress }) => (
+const EventItem = ({ id, title, date, loc, rsvp, progress }) => (
   <div className="flex items-center justify-between py-5 first:pt-0 last:pb-0">
     <div className="max-w-[40%]">
       <h4 className="mb-1 truncate font-semibold text-slate-800">{title}</h4>
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-slate-400 truncate">
         {date} • {loc}
       </p>
     </div>
     <div className="flex items-center gap-10">
-      <div className="w-40">
+      <div className="w-40 hidden md:block">
         <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-widest">
           <span className="font-medium text-[#474747]">RSVPs</span>
           <span className="text-[#151033]">{rsvp}</span>
@@ -359,9 +382,12 @@ const EventItem = ({ title, date, loc, rsvp, progress }) => (
           ></div>
         </div>
       </div>
-      <button className="cursor-pointer border-2 border-[#6B4EFF] px-5 py-2 rounded-xl text-xs font-semibold text-[#6B4EFF] hover:bg-[#6B4EFF]/5 transition-colors">
+      <Link 
+        to={`/dashboard/event/${id}`}
+        className="cursor-pointer border-2 border-[#6B4EFF] px-5 py-2 rounded-xl text-xs font-semibold text-[#6B4EFF] hover:bg-[#6B4EFF]/5 transition-colors whitespace-nowrap"
+      >
         Manage Event
-      </button>
+      </Link>
     </div>
   </div>
 );
