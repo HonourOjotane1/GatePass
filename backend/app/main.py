@@ -24,11 +24,17 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 #CORS
 origins = [
-    os.getenv("FRONTEND_URL", "http://localhost:5173"),
+    os.getenv("FRONTEND_URL", "https://gatepass.vercel.app"),
+    "http://localhost:5173",
     "http://localhost:5174",
     "http://localhost:5175",
 ]
 
+
+
+# middleware runs top to bottom - blocked IP check first
+app.add_middleware(BlockedIPMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -36,11 +42,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# middleware runs top to bottom - blocked IP check first
-app.add_middleware(BlockedIPMiddleware)
-app.add_middleware(SecurityHeadersMiddleware)
-
 
 
 
