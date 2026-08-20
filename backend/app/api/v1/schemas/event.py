@@ -292,6 +292,17 @@ class EventStatsResponse(BaseModel):
     revenue: float
     occupancy_percent: float
 
+class EventListResponse(BaseModel):
+    events: List[EventResponse]
+    items: int
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+
+    class Config:
+        from_attributes = True
+
 
 class DashboardStatsResponse(BaseModel):
     total_events: int
@@ -309,3 +320,4 @@ class ShareableLinkResponse(BaseModel):
 
 class EventDelete(BaseModel):
     id: UUID
+

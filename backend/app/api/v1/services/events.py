@@ -257,7 +257,7 @@ async def get_organizer_events(
     page: int = 1,
     page_size: int = 10
 ) -> dict:
-    query = select(Event).where(Event.organizer_id == organizer_id)
+    query = select(Event).options(selectinload(Event.co_hosts)).where(Event.organizer_id == organizer_id)
 
     if status_filter:
         query = query.where(Event.status == status_filter)
@@ -273,7 +273,8 @@ async def get_organizer_events(
     events = result.scalars().all()
 
     return {
-        "items": events,
+        "events": events,
+        "items": len(events),
         "total": total,
         "page": page,
         "page_size": page_size,

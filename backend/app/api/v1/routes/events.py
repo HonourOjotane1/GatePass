@@ -12,6 +12,7 @@ from app.api.v1.schemas.event import (
     EventCreate,
     EventResponse,
     EventStatsResponse,
+    EventListResponse,
     DashboardStatsResponse,
     CoHostInvite,
     ShareableLinkResponse,
@@ -174,11 +175,14 @@ async def create(
 # ── List, status, stats ────────────────────────────────────────────────
 
 
-@event_router.get("/", response_model=dict)
+@event_router.get("/", response_model=EventListResponse)
 async def list_events(
     status: Optional[EventStatus] = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(10, ge=1, le=100),
+    # total_pages: Optional[int] = Query(None),
+    # items: Optional[int] = Query(None),
+    # total: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_organizer),
 ):
