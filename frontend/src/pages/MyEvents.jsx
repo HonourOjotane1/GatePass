@@ -1,94 +1,63 @@
-import { useState } from "react";
-import { Search, ArrowLeft } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, ArrowLeft, Loader2 } from "lucide-react";
 import { NavLink, Link } from "react-router-dom";
-
-import techSummitImg from "../assets/tech-summit.png";
-import healthTechImg from "../assets/healthtech.png";
-import musicFestImg from "../assets/music-fest.png";
-import weddingExpoImg from "../assets/wedding-expo.png";
-import startupMeetupImg from "../assets/startup-meetup.png";
-import techInnoImg from "../assets/tech-inno.png";
-import aiConferenceImg from "../assets/ai-conference.png";
+import api from "../utils/api";
+import techSummitImg from "../assets/tech-summit.png"; // Fallback image
 
 const MyEvents = () => {
   const [activeTab, setActiveTab] = useState("all");
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Sample events data
-  const allEvents = [
-    {
-      id: 1,
-      title: "Tech Innovators Summit 2025",
-      date: "Fri, 19 Dec 2025",
-      location: "Oriental Hotel, Lagos",
-      image: techSummitImg,
-      status: "upcoming",
-    },
-    {
-      id: 2,
-      title: "HealthTech Innovation Forum",
-      date: "Wed, 10 Dec 2025",
-      location: "Civic Centre, Lagos",
-      image: healthTechImg,
-      status: "upcoming",
-    },
-    {
-      id: 3,
-      title: "Lagos Live Music Fest",
-      date: "Sat, 6 Dec 2025",
-      location: "Tafawa Balewa Square, Lagos",
-      image: musicFestImg,
-      status: "upcoming",
-    },
-    {
-      id: 4,
-      title: "Wedding Expo Africa 2025",
-      date: "Thu, 27 Nov 2025",
-      location: "Radisson Blu, Victoria Island",
-      image: weddingExpoImg,
-      status: "upcoming",
-    },
-    {
-      id: 5,
-      title: "Startup Connect Meetup",
-      date: "Sat, 23 Nov 2025",
-      location: "Landmark Event Centre, Lagos",
-      image: startupMeetupImg,
-      status: "upcoming",
-    },
-    {
-      id: 6,
-      title: "Tech Innovators Summit 2025",
-      date: "Fri, 15 Nov 2025",
-      location: "Eko Hotel, Lagos",
-      image: techSummitImg,
-      status: "past",
-    },
-    {
-      id: 7,
-      title: "Africa Fashion Week Showcase",
-      date: "Fri, 19 Dec 2025",
-      location: "Oriental Hotel, Lagos",
-      image: techInnoImg,
-      status: "upcoming",
-    },
-    {
-      id: 8,
-      title: "AI & Future Tech Conference 2025",
-      date: "Thu, 25 Sep 2025",
-      location: "Muson Centre, Lagos",
-      image: aiConferenceImg,
-      status: "past",
-    },
-  ];
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get('/events/');
+        setEvents(response.data.events || []);
+      } catch (err) {
+        console.error("Error fetching events:", err);
+        setError("Failed to load your events. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Filter events based on active tab
-  const filteredEvents =
-    activeTab === "all"
-      ? allEvents
-      : allEvents.filter((event) => event.status === activeTab);
+    fetchEvents();
+  }, []);
+
+  // Filter events based on active tab and search query
+  const filteredEvents = events.filter((event) => {
+   //Filter by Tab (Status mapping)
+    // Assuming backend 'draft'/'published' = upcoming, 'ended'/'cancelled' = past
+    let matchesTab = true;
+    if (activeTab === "upcoming") {
+      matchesTab = ["draft", "published"].includes(event.status?.toLowerCase());
+    } else if (activeTab === "past") {
+      matchesTab = ["ended", "cancelled"].includes(event.status?.toLowerCase());
+    }
+
+    // 2. Filter by Search Query
+    const searchLower = searchQuery.toLowerCase();
+    const titleMatch = (event.event_name || event.title || "").toLowerCase().includes(searchLower);
+    const locMatch = (event.venue_name || event.location || "").toLowerCase().includes(searchLower);
+    const matchesSearch = titleMatch || locMatch;
+
+    return matchesTab && matchesSearch;
+  });
+
+  if (loading) {
+    return (
+      <div className="flex h-[calc(100vh-5rem)] w-full items-center justify-center bg-[#F9FAFB]">
+        <Loader2 className="animate-spin text-[#6B4EFF] w-10 h-10" />
+      </div>
+    );
+  }
 
   return (
-    <>
+    <div className="min-h-screen bg-[#F9FAFB]">
       {/* HEADER */}
       <header className="h-20 bg-white shadow py-4 px-10 flex items-center justify-between sticky top-0 z-20 font-poppins">
         <div className="flex items-center gap-8">
@@ -109,8 +78,10 @@ const MyEvents = () => {
           />
           <input
             type="text"
-            placeholder="Search name, date, or location..."
-            className="w-full pl-12 pr-4 py-2.5 bg-[#F3F4F6] rounded-xl border-none focus:ring-2 focus:ring-[#6B4EFF]/20 text-sm"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search name or location..."
+            className="w-full pl-12 pr-4 py-2.5 bg-[#F3F4F6] rounded-xl border-none focus:ring-2 focus:ring-[#6B4EFF]/20 text-sm outline-none"
           />
         </div>
 
@@ -125,9 +96,15 @@ const MyEvents = () => {
       </header>
 
       {/* CONTENT */}
-      <div className="p-10">
+      <div className="p-10 font-poppins">
+        {error && (
+            <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-xl border border-red-100">
+                {error}
+            </div>
+        )}
+
         {/* FILTER TABS */}
-        <div className="flex items-center gap-6 mb-8 w-full bg-white p-4 rounded-2xl">
+        <div className="flex items-center gap-6 mb-8 w-full bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
           <button
             onClick={() => setActiveTab("all")}
             className={`px-12 py-3 rounded-full font-semibold text-base transition-all w-full cursor-pointer ${
@@ -167,28 +144,41 @@ const MyEvents = () => {
               <EventCard key={event.id} event={event} />
             ))
           ) : (
-            <div className="bg-white rounded-2xl p-12 text-center">
+            <div className="bg-white rounded-2xl p-12 text-center border border-slate-100 shadow-sm">
               <p className="text-slate-500 text-lg">
-                No {activeTab === "all" ? "" : activeTab} events found
+                No {activeTab === "all" ? "" : activeTab} events found.
               </p>
             </div>
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
 // Event Card Component
 function EventCard({ event }) {
+  // Format the date
+  const formattedDate = event.start_date 
+    ? new Date(event.start_date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+    : 'TBA';
+
+  const title = event.event_name || event.title || 'Untitled Event';
+  const location = event.venue_name || event.location || 'Location TBA';
+  
+  // Use backend image if available, else fallback
+  const imageUrl = event.cover_image_url && event.cover_image_url !== "placeholder_image_url_for_now" && event.cover_image_url !== "string"
+    ? event.cover_image_url 
+    : techSummitImg;
+
   return (
     <div className="bg-white rounded-2xl p-6 flex items-center justify-between hover:shadow-md transition-shadow border border-slate-100">
       <div className="flex items-center gap-6">
         {/* Event Image */}
         <div className="w-32 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100">
           <img
-            src={event.image}
-            alt={event.title}
+            src={imageUrl}
+            alt={title}
             className="w-full h-full object-cover"
           />
         </div>
@@ -196,11 +186,14 @@ function EventCard({ event }) {
         {/* Event Details */}
         <div>
           <h3 className="text-xl font-bold text-gray-900 mb-2">
-            {event.title}
+            {title}
           </h3>
           <p className="text-slate-500 text-sm">
-            {event.date} · {event.location}
+            {formattedDate} · {location}
           </p>
+          <span className="inline-block mt-2 text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 bg-slate-100 text-slate-600 rounded">
+            {event.status || 'Draft'}
+          </span>
         </div>
       </div>
 
