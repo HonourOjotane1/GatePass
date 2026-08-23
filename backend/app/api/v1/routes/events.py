@@ -176,6 +176,11 @@ async def create(
 
 # ── List, status, stats ────────────────────────────────────────────────
 
+@event_router.get("/dashboard", response_model=DashboardStatsResponse)
+async def dashboard(
+    db: AsyncSession = Depends(get_db), current_user: User = Depends(require_organizer)
+):
+    return await get_dashboard_stats(db, current_user.id)
 
 @event_router.get("/", response_model=EventListResponse)
 async def list_events(
@@ -190,6 +195,9 @@ async def list_events(
 ):
     return await get_organizer_events(db, current_user.id, status, page, page_size)
 
+@event_router.get("/share/{slug}", response_model=EventResponse)
+async def get_by_slug(slug: str, db: AsyncSession = Depends(get_db)):
+    return await get_event_by_slug(db, slug)
 
 @event_router.get("/{event_id}", response_model=EventDetailResponse)
 async def event_detail(
@@ -208,18 +216,6 @@ async def update_status(
     current_user: User = Depends(require_organizer),
 ):
     return await update_event_status(db, event_id, current_user.id, new_status)
-
-
-@event_router.get("/dashboard", response_model=DashboardStatsResponse)
-async def dashboard(
-    db: AsyncSession = Depends(get_db), current_user: User = Depends(require_organizer)
-):
-    return await get_dashboard_stats(db, current_user.id)
-
-
-@event_router.get("/share/{slug}", response_model=EventResponse)
-async def get_by_slug(slug: str, db: AsyncSession = Depends(get_db)):
-    return await get_event_by_slug(db, slug)
 
 
 @event_router.get("/{event_id}/stats", response_model=EventStatsResponse)
