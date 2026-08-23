@@ -174,6 +174,53 @@ async def create(
     return await create_event(db, current_user.id, payload)
 
 
+@event_router.get("/dashboard/debug")
+async def dashboard_debug(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_organizer)
+):
+    from app.api.v1.models.guest import Guest, RSVPStatus
+    from sqlalchemy import func
+
+    events_result = await db.execute(
+        select(Event).where(Event.organizer_id == current_user.id)
+    )
+    events = events_result.scalars().all()
+    event_ids = [e.id for e in events]
+
+    async def count_guests(s=None):
+        q = select(func.count()).where(Guest.event_id.in_(event_ids))
+        if s:
+            q = q.where(Guest.rsvp_status == s)
+        r = await db.execute(q)
+        return r.scalar() or 0
+
+    total_invited = await count_guests()
+    total_confirmed = await count_guests(RSVPStatus.confirmed)
+    total_checked_in = await count_guests(RSVPStatus.checked_in)
+
+    # also check what guest records actually exist
+    all_guests_result = await db.execute(
+        select(Guest).where(Guest.event_id.in_(event_ids))
+    )
+    all_guests = all_guests_result.scalars().all()
+
+    return {
+        "event_ids": event_ids,
+        "event_count": len(events),
+        "total_invited_count": total_invited,
+        "total_confirmed_count": total_confirmed,
+        "total_checked_in_count": total_checked_in,
+        "raw_guest_records": [
+            {
+                "id": g.id,
+                "event_id": g.event_id,
+                "email": g.email,
+                "rsvp_status": g.rsvp_status
+            }
+            for g in all_guests
+        ]
+    }
 # ── List, status, stats ────────────────────────────────────────────────
 
 @event_router.get("/dashboard", response_model=DashboardStatsResponse)
