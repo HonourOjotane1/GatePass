@@ -25,17 +25,21 @@ import api from "../utils/api";
 const Dashboard = () => {
   const { user } = useAuth();
   
+  // We keep the state mapped to the live API response, 
+  // but we will use it strictly for the original UI cards.
   const [stats, setStats] = useState({
     total_events: 0,
-    total_guests: 0,
-    upcoming_events_count: 0
+    published_events: 0,
+    completed_events: 0,
+    total_tickets_sold: 0,
+    total_check_ins: 0,
+    total_revenue: 0
   });
-  const [upcomingEvents, setUpcomingEvents] = useState([]);
   
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Determine if the user has any events
   const isEmpty = stats.total_events === 0;
 
   useEffect(() => {
@@ -72,7 +76,6 @@ const Dashboard = () => {
 
   return (
     <>
-      {/* HEADER */}
       <header className="h-20 bg-white shadow py-4 px-10 flex items-center justify-between sticky top-0 z-20 font-poppins">
         <div className="flex items-center gap-8 flex-1">
           <h1 className="text-2xl font-bold">
@@ -102,7 +105,6 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* DASHBOARD CONTENT */}
       <div className="relative p-10 space-y-8 font-poppins">
         
         {error && (
@@ -111,7 +113,7 @@ const Dashboard = () => {
             </div>
         )}
 
-        {/* STATS SECTION */}
+        {/* RESTORED ORIGINAL STATS SECTION */}
         <div className="grid grid-cols-4 gap-6">
           {/* Stat 1 */}
           <div className="bg-white p-6 rounded-3xl border border-slate-100 flex items-center gap-5 shadow-sm">
@@ -137,7 +139,10 @@ const Dashboard = () => {
                <img src={Totalguests} alt="Guests" className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="text-2xl font-bold text-slate-900">{stats.total_guests ? stats.total_guests : "-"}</h4>
+              <h4 className="text-2xl font-bold text-slate-900">
+                {/* Fallback to tickets sold or placeholder if guests isn't provided by the dashboard endpoint */}
+                {stats.total_tickets_sold > 0 ? stats.total_tickets_sold : (isEmpty ? "-" : "0")}
+              </h4>
               <p className="text-[11px] font-medium text-slate-400 uppercase mt-0.5">
                 Total Guests Invited
               </p>
@@ -149,7 +154,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Stat 3 (Placeholder data until API provides the data) */}
+          {/* Stat 3 */}
           <div className="bg-white p-6 rounded-3xl border border-slate-100 flex items-center gap-5 shadow-sm">
             <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center shrink-0">
                <img src={RSVPrate} alt="RSVP" className="w-6 h-6" />
@@ -167,7 +172,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Stat 4 (Placeholder data until API provides the data) */}
+          {/* Stat 4 */}
           <div className="bg-white p-6 rounded-3xl border border-slate-100 flex items-center gap-5 shadow-sm">
             <div className="w-12 h-12 bg-[#6B4EFF]/10 rounded-xl flex items-center justify-center shrink-0">
                <img src={Checkins} alt="Checkin" className="w-6 h-6" />
@@ -186,10 +191,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* CONDITIONALLY RENDER EMPTY OR FILLED STATE */}
         {isEmpty ? (
-          
-          /* EMPTY STATE */
           <div className="flex flex-col items-center justify-center py-20 mt-8 bg-white rounded-3xl border border-slate-100 shadow-sm min-h-[500px]">
             <img 
               src={emptyStateImg || "https://via.placeholder.com/400x300/ffffff/e2e8f0?text=No+Event+Illustration"} 
@@ -205,21 +207,14 @@ const Dashboard = () => {
               >
                 Create an Event Now
               </Link>
-              <button 
-                className="w-full bg-white border border-[#6B4EFF] text-[#6B4EFF] py-4 rounded-xl font-bold hover:bg-[#6B4EFF]/5 transition-all cursor-pointer"
-              >
+              <button className="w-full bg-white border border-[#6B4EFF] text-[#6B4EFF] py-4 rounded-xl font-bold hover:bg-[#6B4EFF]/5 transition-all cursor-pointer">
                 Download RSVP Template
               </button>
             </div>
           </div>
-
         ) : (
-          
-          /* FILLED STATE */
           <>
-            {/* MIDDLE SECTION */}
             <div className="flex gap-4">
-              {/* Banner Card - Using the first upcoming event as the featured event */}
               <div className="w-full max-w-3/5 col-span-2 relative rounded-3xl overflow-hidden bg-slate-900 min-h-[280px] flex group shadow-sm">
                 <img
                   src={upcomingEvents[0]?.cover_image_url || dashboardbanner}
@@ -229,7 +224,7 @@ const Dashboard = () => {
                 <div className="relative z-10 py-6 px-8 flex flex-col justify-between text-white w-full bg-gradient-to-t from-black/80 to-transparent">
                   <div className="flex justify-between items-center w-full">
                     <h2 className="text-3xl font-semibold mb-4">
-                      {upcomingEvents[0]?.title || "Upcoming Event"}
+                      {upcomingEvents[0]?.title || upcomingEvents[0]?.event_name || "Upcoming Event"}
                     </h2>
                     <span className="text-xs font-semibold uppercase tracking-widest mb-2">
                       Your Next Event
@@ -242,15 +237,15 @@ const Dashboard = () => {
                     <div className="flex gap-5">
                       <span className="flex items-center gap-2">
                         <Calendar size={16} /> 
-                        {upcomingEvents[0]?.start_datetime ? new Date(upcomingEvents[0].start_datetime).toLocaleDateString() : 'TBD'}
+                        {upcomingEvents[0]?.start_date ? new Date(upcomingEvents[0].start_date).toLocaleDateString() : 'TBD'}
                       </span>
                       <span className="flex items-center gap-2">
                         <TimerIcon size={16} /> 
-                        {upcomingEvents[0]?.start_datetime ? new Date(upcomingEvents[0].start_datetime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'TBD'}
+                        {upcomingEvents[0]?.start_time ? upcomingEvents[0].start_time : 'TBD'}
                       </span>
                     </div>
                     <span className="flex items-center gap-2">
-                      <MapPin size={16} /> {upcomingEvents[0]?.location || 'TBD'}
+                      <MapPin size={16} /> {upcomingEvents[0]?.venue_name || upcomingEvents[0]?.location || 'TBD'}
                     </span>
                   </div>
                   <Link 
@@ -262,7 +257,6 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              {/* Template Card */}
               <div className="w-full max-w-2/5 bg-white shadow-sm border border-slate-100 rounded-3xl p-8 flex gap-4 flex-row-reverse items-center">
                 <div className="w-1/2 flex items-center justify-center">
                   <img src={rafiki} alt="RSVP Template" />
@@ -281,9 +275,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* LOWER GRID */}
             <div className="grid grid-cols-3 gap-4">
-              {/* Upcoming Events List */}
               <div className="col-span-2 bg-white border border-slate-100 shadow-sm rounded-3xl p-8">
                 <div className="flex items-center justify-between mb-8">
                   <div>
@@ -303,11 +295,10 @@ const Dashboard = () => {
                       <EventItem
                         key={event.id}
                         id={event.id}
-                        title={event.title}
-                        date={new Date(event.start_datetime).toLocaleDateString()}
-                        loc={event.location || "TBA"}
-                        // Placeholder RSVP logic until endpoint is connected
-                        rsvp="0/0" 
+                        title={event.title || event.event_name}
+                        date={event.start_date ? new Date(event.start_date).toLocaleDateString() : "TBA"}
+                        loc={event.venue_name || event.location || "TBA"}
+                        rsvp={`${event.total_tickets || 0}`} 
                         progress={0}
                       />
                     ))
@@ -317,7 +308,6 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              {/* Discover Card */}
               <div className="bg-white border border-slate-100 shadow-sm rounded-3xl py-5 px-3 flex flex-col">
                 <h3 className="text-xl font-semibold mb-1 ml-2">Events Around You</h3>
                 <p className="text-xs text-slate-400 mb-6 ml-2">
@@ -341,7 +331,7 @@ const Dashboard = () => {
                     </p>
                     <div className="flex gap-2 text-[8px] text-slate-200">
                       <span className="flex items-center gap-1.5">
-                        <Calendar size={12} /> Thur,28th Nov, 2025
+                        <Calendar size={12} /> Thur,28th Nov, 2026
                       </span>
                       <span className="flex items-center gap-1.5">
                         <TimerIcon size={12} /> 2:00pm
@@ -372,7 +362,7 @@ const EventItem = ({ id, title, date, loc, rsvp, progress }) => (
     <div className="flex items-center gap-10">
       <div className="w-40 hidden md:block">
         <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-widest">
-          <span className="font-medium text-[#474747]">RSVPs</span>
+          <span className="font-medium text-[#474747]">TICKETS</span>
           <span className="text-[#151033]">{rsvp}</span>
         </div>
         <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
