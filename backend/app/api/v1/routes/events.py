@@ -3,6 +3,7 @@ from fastapi import UploadFile, File
 import os
 import uuid as uuid_lib
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from typing import Optional
 from app.api.v1.schemas.event import (
     WizardStep1,
