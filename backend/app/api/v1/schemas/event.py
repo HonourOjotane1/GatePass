@@ -47,7 +47,7 @@ class AccessType(str, Enum):
 
 
 class CoHostPermission(str, Enum):
-    view_only = "view-only"
+    view_only = "view_only"
     check_in = "check_in"
     manage_guests = "manage_guests"
     full_access = "full_access"
@@ -303,6 +303,55 @@ class EventListResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class GuestSummary(BaseModel):
+    total_invited: int
+    confirmed: int
+    declined: int
+    waitlisted: int
+    checked_in: int
+
+
+class EventDetailResponse(BaseModel):
+    id: str
+    event_name: str
+    slug: Optional[str] = None
+    description: Optional[str] = None
+    event_type: Optional[EventType] = None
+    category: Optional[EventCategory] = None
+    cover_image_url: Optional[str] = None
+    venue_name: Optional[str] = None
+    address: Optional[str] = None
+    is_virtual: bool = False
+    virtual_link: Optional[str] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    start_time: Optional[time] = None
+    end_time: Optional[time] = None
+    status: EventStatus
+    visibility: EventVisibility
+    access_type: Optional[AccessType] = None
+    ticket_name: Optional[str] = None
+    ticket_price: float
+    ticket_description: Optional[str] = None
+    total_tickets: int
+    tickets_sold: int
+    is_free: bool
+    check_ins: int
+    wizard_step: int
+    created_at: datetime
+    updated_at: datetime
+
+    # computed
+    guests: GuestSummary
+    rsvp_rate: Optional[float] = None
+    checkin_rate: Optional[float] = None
+    revenue: float
+    occupancy_percent: Optional[float] = None
+    shareable_link: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
 
 class DashboardStatsResponse(BaseModel):
     total_events: int
@@ -311,7 +360,12 @@ class DashboardStatsResponse(BaseModel):
     total_tickets_sold: int
     total_check_ins: int
     total_revenue: float
-
+    total_guests_invited: int
+    total_guests_confirmed: int
+    total_guests_declined: int
+    total_guests_waitlisted: int
+    overall_rsvp_rate: Optional[float] = None    # None shows dash on frontend
+    overall_checkin_rate: Optional[float] = None  # None shows dash on frontend
 
 class ShareableLinkResponse(BaseModel):
     slug: str

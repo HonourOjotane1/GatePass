@@ -16,6 +16,7 @@ from app.api.v1.schemas.event import (
     DashboardStatsResponse,
     CoHostInvite,
     ShareableLinkResponse,
+    EventDetailResponse,
 )
 from app.api.v1.models.events import EventStatus
 from app.api.v1.models.cohost import CoHostPermission
@@ -39,6 +40,7 @@ from app.api.v1.services.events import (
     get_event_by_slug,
     get_shareable_link,
     _get_own_event,
+    get_event_detail,
 )
 from app.core.security import get_current_user
 from app.db.database import get_db
@@ -106,7 +108,7 @@ async def upload_cover_image(
     file: UploadFile = File(...), current_user: User = Depends(require_organizer)
 ):
     """
-    Upload a cover image and return the URL to includee in wizard step 1.
+    Upload a cover image and return the URL to include in wizard step 1.
     In dev: saves to local /uploads folder.
     In prod; swap this for an S3/Cloudinary upload.
     """
@@ -188,6 +190,15 @@ async def list_events(
 ):
     return await get_organizer_events(db, current_user.id, status, page, page_size)
 
+
+@event_router.get("/{event_id}", response_model=EventDetailResponse)
+async def event_detail(
+    event_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_organizer)
+):
+    """Full event details including guest summary and computed stats."""
+    return await get_event_detail(db, event_id, current_user.id)
 
 @event_router.patch("/{event_id}/status", response_model=EventResponse)
 async def update_status(

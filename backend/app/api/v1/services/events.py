@@ -1,6 +1,7 @@
 from app.api.v1.models.events import Event, EventStatus, EventVisibility
 from app.api.v1.models.cohost import EventCoHost, CoHostPermission
 from app.api.v1.models.user import User
+from app.api.v1.models.guest import Guest, RSVPStatus 
 from app.api.v1.schemas.event import (
     WizardStep1, WizardStep2, WizardStep3, WizardStep4,
     EventCreate, EventUpdate, CoHostInvite, EventVisibility, AccessType
@@ -9,7 +10,7 @@ import re
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import func
+from sqlalchemy import func, and_
 from fastapi import HTTPException, status
 from sqlalchemy.orm import selectinload
 
@@ -281,6 +282,83 @@ async def get_organizer_events(
         "total_pages": -(-total // page_size)
     }
 
+async def get_event_detail(
+    db: AsyncSession, event_id: str, organizer_id: str
+) -> dict:
+    """
+    Full event details for the organizer event details page.
+    Includes guest summary counts and per-event RSVP/check-in rates.
+    """
+    event = await _get_own_event(db, event_id, organizer_id)
+
+    async def count_guests(s=None):
+        q = select(func.count()).where(Guest.event_id == event_id)
+        if s:
+            q = q.where(Guest.rsvp_status == s)
+        r = await db.execute(q)
+        return r.scalar() or 0
+
+    total_invited = await count_guests()
+    total_confirmed = await count_guests(RSVPStatus.confirmed)
+    total_declined = await count_guests(RSVPStatus.declined)
+    total_waitlisted = await count_guests(RSVPStatus.waitlisted)
+    total_checked_in = await count_guests(RSVPStatus.checked_in)
+
+    rsvp_rate = round(total_confirmed / total_invited * 100, 1) if total_invited > 0 else None
+    checkin_rate = round(total_checked_in / total_confirmed * 100, 1) if total_confirmed > 0 else None
+    revenue = round(event.tickets_sold * event.ticket_price, 2)
+    occupancy = round(event.tickets_sold / event.total_tickets * 100, 1) if event.total_tickets > 0 else None
+
+    return {
+        # core event fields
+        "id": event.id,
+        "event_name": event.event_name,
+        "slug": event.slug,
+        "description": event.description,
+        "event_type": event.event_type,
+        "category": event.category,
+        "cover_image_url": event.cover_image_url,
+        "venue_name": event.venue_name,
+        "address": event.address,
+        "is_virtual": event.is_virtual,
+        "virtual_link": event.virtual_link,
+        "start_date": event.start_date,
+        "end_date": event.end_date,
+        "start_time": event.start_time,
+        "end_time": event.end_time,
+        "status": event.status,
+        "visibility": event.visibility,
+        "access_type": event.access_type,
+        "ticket_name": event.ticket_name,
+        "ticket_price": event.ticket_price,
+        "ticket_description": event.ticket_description,
+        "total_tickets": event.total_tickets,
+        "tickets_sold": event.tickets_sold,
+        "is_free": event.is_free,
+        "check_ins": event.check_ins,
+        "wizard_step": event.wizard_step,
+        "created_at": event.created_at,
+        "updated_at": event.updated_at,
+
+        # guest summary
+        "guests": {
+            "total_invited": total_invited,
+            "confirmed": total_confirmed,
+            "declined": total_declined,
+            "waitlisted": total_waitlisted,
+            "checked_in": total_checked_in,
+        },
+
+        # computed rates, return null if no data
+        "rsvp_rate": rsvp_rate,
+        "checkin_rate": checkin_rate,
+        "revenue": revenue,
+        "occupancy_percent": occupancy,
+
+        # shareable link
+        "shareable_link": get_shareable_link(event.slug) if event.slug else None,
+    }
+
 
 # ── Status transitions ─────────────────────────────────────────────────
 
@@ -336,14 +414,69 @@ async def get_dashboard_stats(db: AsyncSession, organizer_id: str) -> dict:
     result = await db.execute(select(Event).where(Event.organizer_id == organizer_id))
     events = result.scalars().all()
 
+    if not events:
+        return {
+           "total_events": 0,
+            "published_events": 0,
+            "completed_events": 0,
+            "total_tickets_sold": 0,
+            "total_check_ins": 0,
+            "total_revenue": 0.0,
+            "total_guests_invited": 0,
+            "total_guests_confirmed": 0,
+            "total_guests_declined": 0,
+            "total_guests_waitlisted": 0,
+            "overall_rsvp_rate": None,     # None shows as dash on frontend
+            "overall_checkin_rate": None,
+        }
+
+        event_ids = [e.id for e in events]
+
+    async def count_guests(s=None):
+        q = select(func.count()).where(Guest.event_id.in_(event_ids))
+        if s:
+            q = q.where(Guest.rsvp_status == s)
+        r = await db.execute(q)
+        return r.scalar() or 0
+
+    total_invited = await count_guests()
+    total_confirmed = await count_guests(RSVPStatus.confirmed)
+    total_declined = await count_guests(RSVPStatus.declined)
+    total_waitlisted = await count_guests(RSVPStatus.waitlisted)
+    total_checked_in = await count_guests(RSVPStatus.checked_in)
+
+    total_tickets_sold = sum(e.tickets_sold for e in events)
+    total_check_ins = sum(e.check_ins for e in events)
+    total_revenue = sum(e.tickets_sold * e.ticket_price for e in events)
+
+    # RSVP rate = confirmed / total invited * 100
+    rsvp_rate = round(total_confirmed / total_invited * 100, 1) if total_invited > 0 else None
+
+    # check-in rate = checked_in / confirmed * 100
+    checkin_rate = round(total_checked_in / total_confirmed * 100, 1) if total_confirmed > 0 else None
+
     return {
         "total_events": len(events),
         "published_events": sum(1 for e in events if e.status == EventStatus.published),
         "completed_events": sum(1 for e in events if e.status == EventStatus.completed),
-        "total_tickets_sold": sum(e.tickets_sold for e in events),
-        "total_check_ins": sum(e.check_ins for e in events),
-        "total_revenue": round(sum(e.tickets_sold * e.ticket_price for e in events), 2)
+        "total_tickets_sold": total_tickets_sold,
+        "total_check_ins": total_check_ins,
+        "total_revenue": round(total_revenue, 2),
+        "total_guests_invited": total_invited,
+        "total_guests_confirmed": total_confirmed,
+        "total_guests_declined": total_declined,
+        "total_guests_waitlisted": total_waitlisted,
+        "overall_rsvp_rate": rsvp_rate,        # null if no guests yet
+        "overall_checkin_rate": checkin_rate,  # null if no confirmed guests yet
     }
+    # return {
+    #     "total_events": len(events),
+    #     "published_events": sum(1 for e in events if e.status == EventStatus.published),
+    #     "completed_events": sum(1 for e in events if e.status == EventStatus.completed),
+    #     "total_tickets_sold": sum(e.tickets_sold for e in events),
+    #     "total_check_ins": sum(e.check_ins for e in events),
+    #     "total_revenue": round(sum(e.tickets_sold * e.ticket_price for e in events), 2)
+    # }
 
 
 # ── Co-host management ─────────────────────────────────────────────────
