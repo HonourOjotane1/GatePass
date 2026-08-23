@@ -430,10 +430,10 @@ async def get_dashboard_stats(db: AsyncSession, organizer_id: str) -> dict:
             "overall_checkin_rate": None,
         }
 
-        event_ids = [e.id for e in events]
+    event_ids = [e.id for e in events]
 
     async def count_guests(s=None):
-        q = select(func.count()).where(Guest.event_id.in_(event_id))
+        q = select(func.count()).where(Guest.event_id.in_(event_ids))
         if s:
             q = q.where(Guest.rsvp_status == s)
         r = await db.execute(q)
