@@ -4,7 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import api from "../utils/api";
 
 const EventDetails = () => {
-  const { id } = useParams(); 
+  const { id } = useParams();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -13,36 +13,14 @@ const EventDetails = () => {
     const fetchEventDetails = async () => {
       try {
         setLoading(true);
-        // Fetch event that matches the ID.
-        // If backend has a specific endpoint like `/events/${id}`, use that instead
-        const response = await api.get('/events/');
-        const allEvents = response.data.events || [];
-        
-        const foundEvent = allEvents.find(e => e.id === id);
-        
-        if (foundEvent) {
-            setEvent(foundEvent);
-        } else {
-            setError("Event not found.");
-        }
+        const response = await api.get(`/events/${id}`);
+        setEvent(response.data);
       } catch (err) {
         console.error("Error fetching event details:", err);
         setError("Failed to load event details.");
       } finally {
         setLoading(false);
       }
-
-      //  try {
-      //   setLoading(true);
-      //   const response = await api.get(`/events/${id}`);
-      //   setEvent(response.data);
-      // } catch (err) {
-      //   console.error("Error fetching event details:", err);
-      //   setError("Failed to load event details.");
-      // } finally {
-      //   setLoading(false);
-      // }
-
     };
 
     fetchEventDetails();
@@ -65,10 +43,9 @@ const EventDetails = () => {
     );
   }
 
-  // Calculate RSVP/Ticket percentage
-  const totalCapacity = event.total_tickets || event.capacity || 0;
-  const currentRsvps = event.tickets_sold || event.check_ins || 0;
-  const rsvpPercentage = totalCapacity > 0 ? (currentRsvps / totalCapacity) * 100 : 0;
+  const totalCapacity = event.total_tickets || 0;
+  const currentRsvps = event.tickets_sold || event.guests?.confirmed || 0;
+  const rsvpPercentage = event.occupancy_percent || (totalCapacity > 0 ? (currentRsvps / totalCapacity) * 100 : 0);
 
   // Format Dates
   const startDateStr = event.start_date ? new Date(event.start_date).toLocaleDateString() : 'TBD';
@@ -81,11 +58,11 @@ const EventDetails = () => {
         <div className="flex items-center gap-4">
           <Link
             to="/dashboard/my-events"
-            className="text-slate-600 hover:text-slate-900"
+            className="text-slate-600 hover:text-slate-900 transition-colors"
           >
             <ArrowLeft size={24} />
           </Link>
-          <h1 className="text-2xl font-bold">Events Details</h1>
+          <h1 className="text-2xl font-bold">Event Details</h1>
         </div>
       </header>
 
@@ -96,25 +73,27 @@ const EventDetails = () => {
           <div className="flex items-start justify-between mb-12">
             <div>
               <h2 className="text-4xl font-bold text-gray-900 mb-2 capitalize">
-                {event.event_name || event.title}
+                {event.event_name}
               </h2>
               <p className="text-slate-400 text-lg capitalize">{event.category || "Uncategorized"}</p>
-              <span className="inline-block mt-3 text-xs uppercase tracking-wider font-bold px-3 py-1 bg-indigo-50 text-indigo-600 rounded">
+              <span className="inline-block mt-3 text-xs uppercase tracking-wider font-bold px-3 py-1 bg-indigo-50 text-[#6B4EFF] rounded">
                 Status: {event.status || 'Draft'}
               </span>
             </div>
 
             {/* RSVP Stats */}
             <div className="text-right">
-              <p className="text-slate-400 text-sm font-medium mb-2">Tickets Sold / RSVPs</p>
+              <p className="text-slate-400 text-sm font-medium mb-2">
+                {event.access_type === 'ticketed' ? "Tickets Sold" : "Confirmed RSVPs"}
+              </p>
               <p className="text-3xl font-bold text-gray-900 mb-3">
                 {currentRsvps} {totalCapacity > 0 && `/ ${totalCapacity}`}
               </p>
               {totalCapacity > 0 && (
                 <div className="w-52 bg-slate-100 h-2.5 rounded-full overflow-hidden ml-auto">
                     <div
-                    className="h-full bg-[#6B4EFF] rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min(rsvpPercentage, 100)}%` }}
+                      className="h-full bg-[#6B4EFF] rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min(rsvpPercentage, 100)}%` }}
                     ></div>
                 </div>
               )}
@@ -126,7 +105,7 @@ const EventDetails = () => {
             {/* Row 1 */}
             <div>
               <p className="text-slate-400 text-sm font-medium mb-3">Event Name</p>
-              <p className="text-xl font-bold text-gray-900 capitalize">{event.event_name || event.title}</p>
+              <p className="text-xl font-bold text-gray-900 capitalize">{event.event_name}</p>
             </div>
 
             <div>
@@ -167,7 +146,9 @@ const EventDetails = () => {
             <div className="col-span-1 md:col-span-2">
               <p className="text-slate-400 text-sm font-medium mb-3">Venue / Location</p>
               <p className="text-xl font-bold text-gray-900">
-                {event.is_virtual ? (event.virtual_link || "Virtual Link TBA") : `${event.venue_name || ''} ${event.address || ''}`.trim() || event.location || "TBA"}
+                {event.is_virtual 
+                  ? (event.virtual_link || "Virtual Link TBA") 
+                  : `${event.venue_name || ''} ${event.address || ''}`.trim() || "Location TBA"}
               </p>
             </div>
 
@@ -178,7 +159,7 @@ const EventDetails = () => {
               </p>
             </div>
 
-            {/* Row 4 (Ticketing) */}
+            {/* Row 4 (Ticketing specific details) */}
             {event.access_type === 'ticketed' && (
                 <>
                     <div>
