@@ -25,15 +25,19 @@ import api from "../utils/api";
 const Dashboard = () => {
   const { user } = useAuth();
   
-  // We keep the state mapped to the live API response, 
-  // but we will use it strictly for the original UI cards.
   const [stats, setStats] = useState({
     total_events: 0,
     published_events: 0,
     completed_events: 0,
     total_tickets_sold: 0,
     total_check_ins: 0,
-    total_revenue: 0
+    total_revenue: 0,
+    total_guests_invited: 0,
+    total_guests_confirmed: 0,
+    total_guests_declined: 0,
+    total_guests_waitlisted: 0,
+    overall_rsvp_rate: 0,
+    overall_checkin_rate: 0
   });
   
   const [upcomingEvents, setUpcomingEvents] = useState([]);
@@ -89,7 +93,7 @@ const Dashboard = () => {
             <input
               type="text"
               placeholder="Search events or guests..."
-              className="w-full pl-12 pr-4 py-2.5 bg-[#F3F4F6] rounded-xl border-none focus:ring-2 focus:ring-[#6B4EFF]/20 text-sm"
+              className="w-full pl-12 pr-4 py-2.5 bg-[#F3F4F6] rounded-xl border-none focus:ring-2 focus:ring-[#6B4EFF]/20 text-sm outline-none"
             />
           </div>
         </div>
@@ -113,7 +117,7 @@ const Dashboard = () => {
             </div>
         )}
 
-        {/* RESTORED ORIGINAL STATS SECTION */}
+        {/* STATS SECTION */}
         <div className="grid grid-cols-4 gap-6">
           {/* Stat 1 */}
           <div className="bg-white p-6 rounded-3xl border border-slate-100 flex items-center gap-5 shadow-sm">
@@ -140,8 +144,7 @@ const Dashboard = () => {
             </div>
             <div>
               <h4 className="text-2xl font-bold text-slate-900">
-                {/* Fallback to tickets sold or placeholder if guests isn't provided by the dashboard endpoint */}
-                {stats.total_tickets_sold > 0 ? stats.total_tickets_sold : (isEmpty ? "-" : "0")}
+                {isEmpty ? "-" : stats.total_guests_invited}
               </h4>
               <p className="text-[11px] font-medium text-slate-400 uppercase mt-0.5">
                 Total Guests Invited
@@ -160,7 +163,9 @@ const Dashboard = () => {
                <img src={RSVPrate} alt="RSVP" className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="text-2xl font-bold text-slate-900">{isEmpty ? "-" : "86%"}</h4>
+              <h4 className="text-2xl font-bold text-slate-900">
+                {isEmpty ? "-" : `${Math.round(stats.overall_rsvp_rate)}%`}
+              </h4>
               <p className="text-[11px] font-medium text-slate-400 uppercase mt-0.5">
                 Overall RSVP Rate
               </p>
@@ -178,7 +183,9 @@ const Dashboard = () => {
                <img src={Checkins} alt="Checkin" className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="text-2xl font-bold text-slate-900">{isEmpty ? "-" : "100%"}</h4>
+              <h4 className="text-2xl font-bold text-slate-900">
+                {isEmpty ? "-" : stats.total_check_ins}
+              </h4>
               <p className="text-[11px] font-medium text-slate-400 uppercase mt-0.5">
                 Check-ins
               </p>
@@ -217,13 +224,17 @@ const Dashboard = () => {
             <div className="flex gap-4">
               <div className="w-full max-w-3/5 col-span-2 relative rounded-3xl overflow-hidden bg-slate-900 min-h-[280px] flex group shadow-sm">
                 <img
-                  src={upcomingEvents[0]?.cover_image_url || dashboardbanner}
+                  src={
+                    upcomingEvents[0]?.cover_image_url && upcomingEvents[0]?.cover_image_url !== "string"
+                      ? upcomingEvents[0].cover_image_url
+                      : dashboardbanner
+                  }
                   alt="Event Banner"
                   className="absolute w-full h-full object-cover"
                 />
                 <div className="relative z-10 py-6 px-8 flex flex-col justify-between text-white w-full bg-gradient-to-t from-black/80 to-transparent">
                   <div className="flex justify-between items-center w-full">
-                    <h2 className="text-3xl font-semibold mb-4">
+                    <h2 className="text-3xl font-semibold mb-4 capitalize">
                       {upcomingEvents[0]?.title || upcomingEvents[0]?.event_name || "Upcoming Event"}
                     </h2>
                     <span className="text-xs font-semibold uppercase tracking-widest mb-2">
@@ -245,7 +256,8 @@ const Dashboard = () => {
                       </span>
                     </div>
                     <span className="flex items-center gap-2">
-                      <MapPin size={16} /> {upcomingEvents[0]?.venue_name || upcomingEvents[0]?.location || 'TBD'}
+                      <MapPin size={16} /> 
+                      {upcomingEvents[0]?.is_virtual ? "Virtual" : upcomingEvents[0]?.venue_name || upcomingEvents[0]?.location || 'TBD'}
                     </span>
                   </div>
                   <Link 
@@ -297,7 +309,7 @@ const Dashboard = () => {
                         id={event.id}
                         title={event.title || event.event_name}
                         date={event.start_date ? new Date(event.start_date).toLocaleDateString() : "TBA"}
-                        loc={event.venue_name || event.location || "TBA"}
+                        loc={event.is_virtual ? "Virtual" : event.venue_name || event.location || "TBA"}
                         rsvp={`${event.total_tickets || 0}`} 
                         progress={0}
                       />
@@ -354,7 +366,7 @@ const Dashboard = () => {
 const EventItem = ({ id, title, date, loc, rsvp, progress }) => (
   <div className="flex items-center justify-between py-5 first:pt-0 last:pb-0">
     <div className="max-w-[40%]">
-      <h4 className="mb-1 truncate font-semibold text-slate-800">{title}</h4>
+      <h4 className="mb-1 truncate font-semibold text-slate-800 capitalize">{title}</h4>
       <p className="text-xs text-slate-400 truncate">
         {date} • {loc}
       </p>
