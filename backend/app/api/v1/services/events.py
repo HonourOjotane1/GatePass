@@ -154,8 +154,15 @@ async def publish_event(db: AsyncSession, event_id: str, organizer_id: str) -> E
         errors.append("start_date and start_time are required.")
     if not event.end_date or not event.end_time:
         errors.append("end_date and end_time are required.")
-    if event.start_time and event.end_time and event.start_time >= event.end_time:
-        errors.append("start_time must be before end_time.")
+    if (
+        event.start_date 
+        and event.end_date 
+        and event.start_time 
+        and event.end_time 
+        and event.start_date == event.end_date 
+        and event.start_time >= event.end_time
+    ):
+        errors.append("For same-day events, start_time must be before end_time.")
     if not event.is_virtual and not event.address:
         errors.append("address is required for non-virtual events.")
     if event.access_type == AccessType.ticketed:
@@ -163,10 +170,10 @@ async def publish_event(db: AsyncSession, event_id: str, organizer_id: str) -> E
             errors.append("total_tickets must be greater than 0 for ticketed events.")
             if not event.is_free and event.ticket_price <= 0:
                 errors.append("ticket_price must be greater than 0 for paid events.")
-    if event.total_tickets <= 0:
-        errors.append("total_tickets must be greater than 0.")
-    if not event.is_free and event.ticket_price <= 0:
-        errors.append("ticket_price must be greater than 0 for paid events.")
+    # if event.total_tickets <= 0:
+    #     errors.append("total_tickets must be greater than 0.")
+    # if not event.is_free and event.ticket_price <= 0:
+    #     errors.append("ticket_price must be greater than 0 for paid events.")
     if event.wizard_step < 4:
         errors.append(f"Wizard incomplete — on step {event.wizard_step}. Complete all 4 steps first.")
 
