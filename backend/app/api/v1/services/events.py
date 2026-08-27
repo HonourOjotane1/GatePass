@@ -196,8 +196,13 @@ async def save_draft(db: AsyncSession, event_id: str, organizer_id: str, data: d
     event = await _get_own_event(db, event_id, organizer_id)
 
     allowed_fields = [
-        "event_name", "description", "location", "start_time",
-        "end_time", "total_tickets", "ticket_price", "is_free", "visibility"
+        "event_name", "description", "location", 
+        "start_date", "end_date", "start_time", "end_time",
+        "total_tickets", "ticket_price", "is_free", "visibility",
+        "venue_name", "address", "is_virtual", "virtual_link",
+        "event_type", "category", "cover_image_url",
+        "access_type", "ticket_name", "ticket_description"
+
     ]
     for field, value in data.items():
         if field in allowed_fields and value is not None:
@@ -213,10 +218,17 @@ async def save_draft(db: AsyncSession, event_id: str, organizer_id: str, data: d
 # kept alongside wizard — useful for programmatic/API creation without stepping
 
 async def create_event(db: AsyncSession, organizer_id: str, data: EventCreate) -> Event:
-    if data.start_time and data.end_time and data.start_time >= data.end_time:
+    if (
+        data.start_date
+        and data.end_date
+        and data.start_time
+        and data.end_time
+        and data.start_date == data.end_date
+        and data.start_time >= data.end_time
+    ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="start_time must be before end_time."
+            detail="For same-day events, start_time must be before end_time."
         )
 
     event = Event(
@@ -231,6 +243,8 @@ async def create_event(db: AsyncSession, organizer_id: str, data: EventCreate) -
         location=data.address,
         is_virtual=data.is_virtual,
         virtual_link=data.virtual_link,
+        start_date=data.start_date,
+        end_date=data.end_date,
         start_time=data.start_time,
         end_time=data.end_time,
         access_type=data.access_type,

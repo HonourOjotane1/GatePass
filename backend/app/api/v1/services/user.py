@@ -94,7 +94,11 @@ async def login_user(db: AsyncSession, email: str, password: str) -> dict:
         "access_token": token,
         "token_type": "bearer",
         "user_id": user.id,
-        "role": user.role
+        "role": user.role,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        'username': user.username,
+        "email": user.email,
     }
 
 

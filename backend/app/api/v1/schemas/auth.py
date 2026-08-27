@@ -32,6 +32,10 @@ class LoginResponse(BaseModel):
     token_type: str = "bearer"
     user_id: str
     role: UserRole
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
 
 class LogoutResponse(BaseModel):
     message: str
