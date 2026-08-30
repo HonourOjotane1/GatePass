@@ -10,7 +10,7 @@ const CreateEvent = () => {
   const [isPublished, setIsPublished] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  const [createdEventId, setCreatedEventId] = useState(null); // Tracks the new event ID
+  const [createdEventId, setCreatedEventId] = useState(null);
 
   const [formData, setFormData] = useState({
     eventName: "", eventDescription: "", eventType: "", eventCategory: "",
@@ -73,7 +73,7 @@ const CreateEvent = () => {
 
       const response = await api.post("/events/", payload);
       
-      setCreatedEventId(response.data.id); // Save the ID for the modal link
+      setCreatedEventId(response.data.id);
       setIsPublished(true);
     } catch (err) {
       console.error("Publishing error:", err);
@@ -107,8 +107,7 @@ const CreateEvent = () => {
             { label: "Continue", variant: "solid", to: "/dashboard" },
             { 
               label: "View Details", 
-              variant: "outline", 
-              // Dynamically link to the newly created event
+              variant: "outline",
               to: createdEventId ? `/dashboard/event/${createdEventId}` : "/dashboard/my-events" 
             },
           ]}
@@ -192,7 +191,7 @@ const CreateEvent = () => {
   );
 };
 
-/* --- SUB-COMPONENTS (STEPS 1-5) --- */
+/* SUB-COMPONENTS (STEPS 1-5) */
 const Step1 = ({ form, update }) => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -246,6 +245,10 @@ const Step1 = ({ form, update }) => {
               <option value="music">Music</option>
               <option value="entertainment">Entertainment</option>
               <option value="education">Education</option>
+              <option value="tech">Tech</option>
+              <option value="arts">Arts</option>
+              <option value="food">Food</option>
+              <option value="sports">Sports</option>
             </select>
             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={20} />
           </div>
@@ -332,7 +335,7 @@ const Step3 = ({ form, update }) => (
     <p className="text-slate-400 mb-10">Please enter the details correctly to create your event</p>
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {["Open Access", "Invite Only", "Ticketed Event"].map((type) => {
-        const value = type === "Open Access" ? "open" : type === "Invite Only" ? "invite" : "ticketed";
+        const value = type === "Open Access" ? "open" : type === "Invite Only" ? "invite_only" : "ticketed";
         const isSelected = form.accessType === value;
         return (
           <div key={value} onClick={() => update("accessType", value)} className={`cursor-pointer rounded-xl border-2 p-6 flex items-center justify-center gap-3 transition-all h-24 ${isSelected ? "border-[#6B4EFF] bg-[#6B4EFF]/5 text-[#6B4EFF]" : "border-slate-200 text-slate-500 hover:border-[#6B4EFF]/50"}`}>
@@ -375,7 +378,7 @@ const Step4 = ({ form, update }) => {
     );
   }
 
-  if (form.accessType === "invite") {
+  if (form.accessType === "invite_only") {
     const [tab, setTab] = useState("upload");
     return (
       <div className="animate-in fade-in slide-in-from-right-4 duration-300">

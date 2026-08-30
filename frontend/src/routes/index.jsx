@@ -24,7 +24,7 @@ import Home from "../pages/Home";
 import EventDetails from "../pages/EventDetails";
 import AddGuest from "../pages/AddGuest";
 
-// 1. Global wrapper to enforce scroll to top on route changes and reloads
+// Global wrapper to enforce scroll to top on route changes and reloads
 function RootLayout() {
   const { pathname } = useLocation();
 
