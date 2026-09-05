@@ -3,47 +3,14 @@ from uuid import UUID
 from pydantic import BaseModel, Field, field_validator, model_validator
 from datetime import time, date, datetime
 from enum import Enum
-
-
-class EventStatus(str, Enum):
-    draft = "draft"
-    published = "published"
-    ongoing = "ongoing"
-    completed = "completed"
-    cancelled = "cancelled"
-
-
-class EventVisibility(str, Enum):
-    public = "public"
-    private = "private"
-    invite_only = "invite_only"
-
-
-class EventType(str, Enum):
-    conference = "conference"
-    concert = "concert"
-    workshop = "workshop"
-    party = "party"
-    sports = "sports"
-    networking = "networking"
-    other = "other"
-
-
-class EventCategory(str, Enum):
-    music = "music"
-    tech = "tech"
-    business = "business"
-    arts = "arts"
-    food = "food"
-    sports = "sports"
-    education = "education"
-    other = "other"
-
-
-class AccessType(str, Enum):
-    open = "open"
-    invite_only = "invite_only"
-    ticketed = "ticketed"
+from app.api.v1.models.event import (
+    EventType,
+    EventCategory,  
+    EventVisibility,
+    AccessType,
+    EventStatus, 
+    EventType,
+)
 
 
 class CoHostPermission(str, Enum):
@@ -115,7 +82,7 @@ class WizardStep2(BaseModel):
 class WizardStep3(BaseModel):
     """Step 3: Access type selection."""
     access_type: AccessType = AccessType.open
-    # invite-only: bool Default=False
+    # invite_only: bool Default=False
     # ticketed_event: bool Default=False
 
     # @field_validator("total_tickets")
@@ -143,8 +110,8 @@ class WizardStep4(BaseModel):
     ticket_description: Optional[str] = None
     is_free: bool = False
 
-    # visibility setting
-    visibility: EventVisibility = EventVisibility.public
+    # # visibility setting
+    # visibility: EventVisibility = EventVisibility.public
 
     @field_validator("ticket_price")
     @classmethod
@@ -198,6 +165,7 @@ class CoHostResponse(BaseModel):
 
 
 # General event schemas
+# TODO: Remove before production - kept for API testing only.
 class EventCreate(BaseModel):
     """Direct create - no wizard- for API use."""
 
@@ -220,7 +188,7 @@ class EventCreate(BaseModel):
     total_tickets: int = 0
     ticket_price: float = 0.0
     is_free: bool = False
-    visibility: EventVisibility = EventVisibility.public
+    # visibility: EventVisibility = EventVisibility.public
     # location: Optional[str] = None
 
 

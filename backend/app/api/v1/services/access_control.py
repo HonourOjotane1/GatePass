@@ -8,7 +8,7 @@ from app.api.v1.models.access_control import (
     EventStaffAssignment, CheckInStatus, StaffRole, TierLevel, ZoneType
 )
 from app.api.v1.models.guest import Guest, RSVPStatus
-from app.api.v1.models.events import Event
+from app.api.v1.models.event import Event
 from app.api.v1.models.user import User
 from app.api.v1.schemas.access_control import (
     ZoneCreate, CheckInRequest, OfflineSyncRequest,

@@ -1,4 +1,4 @@
-from app.api.v1.models.events import Event, EventStatus, EventVisibility
+from app.api.v1.models.event import Event, EventStatus, EventVisibility
 from app.api.v1.models.cohost import EventCoHost, CoHostPermission
 from app.api.v1.models.user import User
 from app.api.v1.models.guest import Guest, RSVPStatus 
@@ -131,7 +131,7 @@ async def wizard_step4(db: AsyncSession, event_id: str, organizer_id: str, data:
     event.total_tickets = data.total_tickets
     event.ticket_description = data.ticket_description
     event.is_free = data.is_free
-    event.visibility = data.visibility
+    # event.visibility = data.visibility
     event.wizard_step = max(event.wizard_step, 4)
     event.updated_at = datetime.utcnow()
     await db.commit()
@@ -216,7 +216,7 @@ async def save_draft(db: AsyncSession, event_id: str, organizer_id: str, data: d
 
 # ── Create event (direct, no wizard) ──────────────────────────────────
 # kept alongside wizard — useful for programmatic/API creation without stepping
-
+# TODO: Remove before production. Kept for testing and API use only.
 async def create_event(db: AsyncSession, organizer_id: str, data: EventCreate) -> Event:
     if (
         data.start_date

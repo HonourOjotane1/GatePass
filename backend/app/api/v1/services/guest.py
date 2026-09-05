@@ -4,7 +4,7 @@ from sqlalchemy.future import select
 from sqlalchemy import func, and_, or_
 from fastapi import HTTPException, status
 from app.api.v1.models.guest import Guest, RSVPStatus, InviteMethod
-from app.api.v1.models.events import Event
+from app.api.v1.models.event import Event
 from app.api.v1.schemas.guest import GuestInviteSingle, GuestInviteBulk, GuestUpdate, RSVPResponse
 from app.utils.emails import send_rsvp_invitation_email, send_rsvp_confirmation_email, send_waitlist_promotion_email
 from app.utils.sms import send_rsvp_invitation_sms, send_waitlist_promotion_sms

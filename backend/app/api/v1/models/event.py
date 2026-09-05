@@ -32,7 +32,7 @@ class EventVisibility(str, enum.Enum):
     invite_only = "invite_only"
 
 
-class EventType(str, enum.Enum):
+class EventType(str, enum.Enum): # Format of the event( How it's structured)
     conference = "conference"
     concert = "concert"
     workshop = "workshop"
@@ -40,9 +40,16 @@ class EventType(str, enum.Enum):
     sports = "sports"
     networking = "networking"
     other = "other"
+    festival = "festival"
+    meetup = "meetup"
+    seminar = "seminar"
+    exhibition = "exhibition"
+    screening = "screening"
+    webinar = "webinar"
 
 
-class EventCategory(str, enum.Enum):
+
+class EventCategory(str, enum.Enum): # Content/industry (What it's about)
     music = "music"
     tech = "tech"
     business = "business"
@@ -50,6 +57,11 @@ class EventCategory(str, enum.Enum):
     food = "food"
     sports = "sports"
     education = "education"
+    entertainment = "entertainment"
+    fashion = "fashion"
+    health_wellness = "health_wellness"
+    community = "community"
+    religious = "religious"
     other = "other"
 
 

@@ -7,7 +7,7 @@ from sqlalchemy import and_, func
 from fastapi import HTTPException
 from jose import jwt
 
-from app.api.v1.models.events import Event, EventVisibility
+from app.api.v1.models.event import Event, EventVisibility
 from app.api.v1.models.guest import Guest, RSVPStatus, InviteMethod
 from app.api.v1.models.guest_session import GuestSession
 from app.api.v1.models.user import User
