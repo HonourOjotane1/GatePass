@@ -131,7 +131,6 @@ async def wizard_step4(db: AsyncSession, event_id: str, organizer_id: str, data:
     event.total_tickets = data.total_tickets
     event.ticket_description = data.ticket_description
     event.is_free = data.is_free
-    # event.visibility = data.visibility
     event.wizard_step = max(event.wizard_step, 4)
     event.updated_at = datetime.utcnow()
     await db.commit()

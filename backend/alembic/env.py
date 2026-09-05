@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 
 from app.db.database import Base
-from app.api.v1.models import user, events, guest, cohost, magic_link, otp
+from app.api.v1.models import user, event, guest, cohost, magic_link, otp
 
 config = context.config
 

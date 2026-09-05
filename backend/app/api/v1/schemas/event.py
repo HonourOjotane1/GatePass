@@ -9,7 +9,6 @@ from app.api.v1.models.event import (
     EventVisibility,
     AccessType,
     EventStatus, 
-    EventType,
 )
 
 
@@ -109,9 +108,6 @@ class WizardStep4(BaseModel):
     total_tickets: int = 0
     ticket_description: Optional[str] = None
     is_free: bool = False
-
-    # # visibility setting
-    # visibility: EventVisibility = EventVisibility.public
 
     @field_validator("ticket_price")
     @classmethod
