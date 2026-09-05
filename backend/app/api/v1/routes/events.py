@@ -19,7 +19,7 @@ from app.api.v1.schemas.event import (
     ShareableLinkResponse,
     EventDetailResponse,
 )
-from app.api.v1.models.events import Event, EventStatus
+from app.api.v1.models.event import Event, EventStatus
 from app.api.v1.models.cohost import CoHostPermission
 from app.api.v1.models.user import User, UserRole
 from app.api.v1.services.events import (
