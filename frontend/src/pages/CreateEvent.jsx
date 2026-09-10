@@ -1,5 +1,13 @@
 import { useState } from "react";
-import { ArrowLeft, ChevronDown, Upload, Calendar, Clock, Loader2, X } from "lucide-react";
+import {
+  ArrowLeft,
+  ChevronDown,
+  Upload,
+  Calendar,
+  Clock,
+  Loader2,
+  X,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import FeedbackModal from "../components/FeedbackModal";
 import SuccessIcon from "../assets/icons/success-badge.svg";
@@ -13,12 +21,41 @@ const CreateEvent = () => {
   const [createdEventId, setCreatedEventId] = useState(null);
 
   const [formData, setFormData] = useState({
-    eventName: "", eventDescription: "", eventType: "", eventCategory: "",
-    coverImage: null, coverImagePreview: null, startDate: "", startTime: "",
-    endDate: "", endTime: "", venueName: "", address: "", isVirtual: false,
-    accessType: "", ticketName: "", ticketPrice: "", ticketQuantity: "",
-    ticketDescription: "", guestListFile: null, guestListName: "", rsvpDeadline: "",
-    maxCapacity: "", allowPlusOne: false, manualGuestEmail: "",
+    // Step 1
+    eventName: "",
+    eventDescription: "",
+    eventType: "",
+    eventCategory: "",
+    coverImage: null,
+    coverImagePreview: null,
+
+    // Step 2
+    startDate: "",
+    startTime: "",
+    endDate: "",
+    endTime: "",
+    venueName: "",
+    address: "",
+    isVirtual: false,
+
+    // Step 3
+    accessType: "",
+
+    // Step 4
+    ticketName: "",
+    ticketPrice: "",
+    ticketQuantity: "",
+    ticketDescription: "",
+    guestListFile: null,
+
+    // Step 4 (Invite Only)
+    guestListName: "",
+    rsvpDeadline: "",
+    maxCapacity: "",
+    allowPlusOne: false,
+
+    // Manual Guest Add
+    manualGuestEmail: "",
   });
 
   const updateForm = (field, value) => {
@@ -26,13 +63,19 @@ const CreateEvent = () => {
   };
 
   const nextStep = () => {
-    if (currentStep === 3 && formData.accessType === "open") setCurrentStep(5);
-    else setCurrentStep((prev) => Math.min(prev + 1, 5));
+    if (currentStep === 3 && formData.accessType === "open") {
+      setCurrentStep(5);
+    } else {
+      setCurrentStep((prev) => Math.min(prev + 1, 5));
+    }
   };
 
   const prevStep = () => {
-    if (currentStep === 5 && formData.accessType === "open") setCurrentStep(3);
-    else setCurrentStep((prev) => Math.max(prev - 1, 1));
+    if (currentStep === 5 && formData.accessType === "open") {
+      setCurrentStep(3);
+    } else {
+      setCurrentStep((prev) => Math.max(prev - 1, 1));
+    }
   };
 
   const handlePublish = async () => {
@@ -43,52 +86,122 @@ const CreateEvent = () => {
       if (!formData.eventName || !formData.startDate || !formData.startTime) {
         setSubmitError("Event Name, Start Date, and Start Time are required.");
         setIsSubmitting(false);
-        return; 
+        return;
       }
 
-      const formattedStartTime = `${formData.startTime}:00`;
-      const formattedEndTime = formData.endTime ? `${formData.endTime}:00` : formattedStartTime;
+      // 1. IMAGE UPLOAD
+      let finalImageUrl = "string";
+      if (formData.coverImage) {
+        try {
+          const imageFormData = new FormData();
+          imageFormData.append("file", formData.coverImage);
 
-      const payload = {
-        event_name: formData.eventName,
-        description: formData.eventDescription || "",
-        event_type: formData.eventType || "conference",
-        category: formData.eventCategory || "business",
-        cover_image_url: formData.coverImagePreview || "string", 
-        venue_name: formData.venueName || "",
-        address: formData.address || "",
+          const uploadRes = await api.post(
+            "/events/upload/cover-image",
+            imageFormData,
+            {
+              headers: { "Content-Type": "multipart/form-data" },
+            },
+          );
+
+          // extract image URL from response, with fallback to "string" if not present
+          finalImageUrl =
+            uploadRes.data?.cover_image_url ||
+            uploadRes.data?.url ||
+            uploadRes.data ||
+            "string";
+        } catch (uploadErr) {
+          console.error("Cover image upload failed:", uploadErr);
+          // Optionally halt submission here, but proceeding with fallback ensures form works if image endpoint is down
+        }
+      }
+
+      let eventId = createdEventId;
+
+      // 2. WIZARD FLOW
+
+      // STEP 1
+      if (!eventId) {
+        const step1Payload = {
+          event_name: formData.eventName,
+          description: formData.eventDescription || "string",
+          event_type: formData.eventType || "conference",
+          category: formData.eventCategory || "music",
+          cover_image_url: finalImageUrl,
+        };
+        const res1 = await api.post("/events/wizard/step1", step1Payload);
+        eventId = res1.data.id;
+        setCreatedEventId(eventId);
+      }
+
+      // STEP 2: Date & Location
+      // date & time formatting
+      const formattedStartTime = `${formData.startTime}:00.000Z`;
+      const formattedEndTime = formData.endTime
+        ? `${formData.endTime}:00.000Z`
+        : formattedStartTime;
+
+      const step2Payload = {
+        venue_name: formData.venueName || "string",
+        address: formData.address || "string",
         is_virtual: formData.isVirtual,
-        virtual_link: "", 
-        start_date: formData.startDate,
-        end_date: formData.endDate || formData.startDate, 
+        virtual_link: "string",
         start_time: formattedStartTime,
         end_time: formattedEndTime,
-        access_type: formData.accessType || "open",
-        ticket_name: formData.ticketName || "General Admission",
-        total_tickets: formData.ticketQuantity ? parseInt(formData.ticketQuantity) : 0,
-        ticket_price: formData.ticketPrice ? parseFloat(formData.ticketPrice) : 0,
-        is_free: !formData.ticketPrice || parseFloat(formData.ticketPrice) === 0,
-        visibility: formData.accessType === "invite" ? "private" : "public"
+        start_date: formData.startDate,
+        end_date: formData.endDate || formData.startDate,
       };
+      await api.patch(`/events/wizard/${eventId}/step2`, step2Payload);
 
-      const response = await api.post("/events/", payload);
-      
-      setCreatedEventId(response.data.id);
+      // STEP 3: Ticketing & Access
+      const step3Payload = {
+        access_type: formData.accessType || "open",
+      };
+      await api.patch(`/events/wizard/${eventId}/step3`, step3Payload);
+
+      // STEP 4: Tickets
+      const isFree =
+        !formData.ticketPrice || parseFloat(formData.ticketPrice) === 0;
+      const step4Payload = {
+        ticket_name: formData.ticketName || "string",
+        ticket_price: formData.ticketPrice
+          ? parseFloat(formData.ticketPrice)
+          : 0,
+        total_tickets: formData.ticketQuantity
+          ? parseInt(formData.ticketQuantity)
+          : 0,
+        ticket_description: formData.ticketDescription || "string",
+        is_free: isFree,
+      };
+      await api.patch(`/events/wizard/${eventId}/step4`, step4Payload);
+
+      // STEP 5: Publish the Event
+      await api.post(`/events/wizard/${eventId}/publish`);
+
       setIsPublished(true);
     } catch (err) {
       console.error("Publishing error:", err);
-      let errorMessage = "Failed to publish the event. Please check your inputs.";
-      
-      if (err.response?.data?.detail) {
+
+      let errorMessage =
+        "Failed to publish the event. Please check your inputs.";
+
+      if (err.response && err.response.data && err.response.data.detail) {
         const detail = err.response.data.detail;
-        if (typeof detail === "string") errorMessage = detail;
-        else if (Array.isArray(detail)) {
-          errorMessage = detail.map(errObj => {
-            const field = errObj.loc ? errObj.loc[errObj.loc.length - 1] : "Field";
-            return `${field}: ${errObj.msg}`;
-          }).join(" | ");
+
+        if (typeof detail === "string") {
+          errorMessage = detail;
+        } else if (Array.isArray(detail)) {
+          errorMessage = detail
+            .map((errObj) => {
+              const field = errObj.loc
+                ? errObj.loc[errObj.loc.length - 1]
+                : "Field";
+              return `${field}: ${errObj.msg}`;
+            })
+            .join(" | ");
         }
       }
+
       setSubmitError(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -99,16 +212,19 @@ const CreateEvent = () => {
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] px-6 lg:px-10 font-sans text-slate-800 font-poppins relative">
+      {/* SUCCESS MODAL POPUP */}
       {isPublished && (
         <FeedbackModal
           icon={SuccessIcon}
           title="Event Published!"
           buttons={[
             { label: "Continue", variant: "solid", to: "/dashboard" },
-            { 
-              label: "View Details", 
+            {
+              label: "View Details",
               variant: "outline",
-              to: createdEventId ? `/dashboard/event/${createdEventId}` : "/dashboard/my-events" 
+              to: createdEventId
+                ? `/dashboard/event/${createdEventId}`
+                : "/dashboard/my-events",
             },
           ]}
         />
@@ -116,7 +232,10 @@ const CreateEvent = () => {
 
       {/* HEADER */}
       <div className="flex items-center gap-4 mb-8 w-full bg-white p-6 rounded shadow-sm">
-        <Link to="/dashboard" className="text-slate-600 hover:text-slate-900 transition-colors cursor-pointer">
+        <Link
+          to="/dashboard"
+          className="text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
+        >
           <ArrowLeft size={24} />
         </Link>
         <h1 className="text-2xl font-bold">Create Events</h1>
@@ -128,14 +247,30 @@ const CreateEvent = () => {
         <div className="absolute top-8 right-8 lg:top-12 lg:right-12">
           <div className="relative w-16 h-16 flex items-center justify-center">
             <svg className="w-full h-full transform -rotate-90">
-              <circle cx="32" cy="32" r="28" stroke="#F3F4F6" strokeWidth="4" fill="none" />
               <circle
-                cx="32" cy="32" r="28" stroke="#6B4EFF" strokeWidth="4" fill="none"
-                strokeDasharray="175.9" strokeDashoffset={175.9 - (175.9 * progress) / 100}
-                strokeLinecap="round" className="transition-all duration-500 ease-out"
+                cx="32"
+                cy="32"
+                r="28"
+                stroke="#F3F4F6"
+                strokeWidth="4"
+                fill="none"
+              />
+              <circle
+                cx="32"
+                cy="32"
+                r="28"
+                stroke="#6B4EFF"
+                strokeWidth="4"
+                fill="none"
+                strokeDasharray="175.9"
+                strokeDashoffset={175.9 - (175.9 * progress) / 100}
+                strokeLinecap="round"
+                className="transition-all duration-500 ease-out"
               />
             </svg>
-            <span className="absolute text-lg font-bold text-slate-900">{currentStep}/5</span>
+            <span className="absolute text-lg font-bold text-slate-900">
+              {currentStep}/5
+            </span>
           </div>
         </div>
 
@@ -159,11 +294,17 @@ const CreateEvent = () => {
           {currentStep !== 3 && currentStep !== 5 && (
             <div className="mt-12 flex justify-center gap-4">
               {currentStep > 1 && (
-                <button onClick={prevStep} className="w-full max-w-md border-2 border-[#6B4EFF] text-[#6B4EFF] py-4 rounded-xl font-bold text-lg cursor-pointer hover:bg-[#6B4EFF]/5 transition-all">
+                <button
+                  onClick={prevStep}
+                  className="w-full max-w-md border-2 border-[#6B4EFF] text-[#6B4EFF] py-4 rounded-xl font-bold text-lg cursor-pointer hover:bg-[#6B4EFF]/5 transition-all"
+                >
                   Previous
                 </button>
               )}
-              <button onClick={nextStep} className="w-full max-w-md bg-[#6B4EFF] text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg cursor-pointer transition-all">
+              <button
+                onClick={nextStep}
+                className="w-full max-w-md bg-[#6B4EFF] text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg cursor-pointer transition-all"
+              >
                 Next
               </button>
             </div>
@@ -171,14 +312,19 @@ const CreateEvent = () => {
 
           {currentStep === 3 && (
             <div className="mt-16 flex justify-center gap-4">
-              <button onClick={prevStep} className="w-full max-w-md border-2 border-[#6B4EFF] text-[#6B4EFF] py-4 rounded-xl font-bold text-lg hover:bg-[#6B4EFF]/5 cursor-pointer transition-all">
+              <button
+                onClick={prevStep}
+                className="w-full max-w-md border-2 border-[#6B4EFF] text-[#6B4EFF] py-4 rounded-xl font-bold text-lg hover:bg-[#6B4EFF]/5 cursor-pointer transition-all"
+              >
                 Previous
               </button>
               <button
                 onClick={nextStep}
                 disabled={!formData.accessType}
                 className={`w-full max-w-md py-4 rounded-xl font-bold text-lg transition-all ${
-                  formData.accessType ? "text-white bg-[#6B4EFF] cursor-pointer hover:shadow-lg" : "text-[#6B4EFF]/40 bg-[#6B4EFF]/20 cursor-not-allowed"
+                  formData.accessType
+                    ? "text-white bg-[#6B4EFF] cursor-pointer hover:shadow-lg"
+                    : "text-[#6B4EFF]/40 bg-[#6B4EFF]/20 cursor-not-allowed"
                 }`}
               >
                 Next
@@ -209,67 +355,140 @@ const Step1 = ({ form, update }) => {
 
   return (
     <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-      <h2 className="text-3xl font-bold text-slate-900 mb-2">Create a New Event</h2>
-      <p className="text-slate-400 mb-10">Please enter the details correctly to create your event</p>
+      <h2 className="text-3xl font-bold text-slate-900 mb-2">
+        Create a New Event
+      </h2>
+      <p className="text-slate-400 mb-10">
+        Please enter the details correctly to create your event
+      </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         <div className="space-y-2">
-          <label className="text-sm font-bold text-slate-900">Event Name <span className="text-[#DB2F40]">*</span></label>
-          <input type="text" value={form.eventName} onChange={(e) => update("eventName", e.target.value)} placeholder="e.g Tech Conference 2025" className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none transition-all placeholder:text-slate-400" />
+          <label className="text-sm font-bold text-slate-900">
+            Event Name <span className="text-[#DB2F40]">*</span>
+          </label>
+          <input
+            type="text"
+            value={form.eventName}
+            onChange={(e) => update("eventName", e.target.value)}
+            placeholder="e.g Tech Conference 2025"
+            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none transition-all placeholder:text-slate-400"
+          />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-bold text-slate-900">Event Description <span className="text-[#DB2F40]">*</span></label>
-          <input type="text" value={form.eventDescription} onChange={(e) => update("eventDescription", e.target.value)} placeholder="Tell attendees what the event is about" className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none transition-all placeholder:text-slate-400" />
+          <label className="text-sm font-bold text-slate-900">
+            Event Description <span className="text-[#DB2F40]">*</span>
+          </label>
+          <input
+            type="text"
+            value={form.eventDescription}
+            onChange={(e) => update("eventDescription", e.target.value)}
+            placeholder="Tell attendees what the event is about"
+            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none transition-all placeholder:text-slate-400"
+          />
         </div>
         <div className="space-y-2 relative">
           <label className="text-sm font-bold text-slate-900">Event Type</label>
           <div className="relative">
-            <select value={form.eventType} onChange={(e) => update("eventType", e.target.value)} className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white text-slate-600">
+            <select
+              value={form.eventType}
+              onChange={(e) => update("eventType", e.target.value)}
+              className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white text-slate-600"
+            >
               <option value="">Select Type</option>
               <option value="conference">Conference</option>
               <option value="party">Party</option>
               <option value="concert">Concert</option>
               <option value="seminar">Seminar</option>
               <option value="wedding">Wedding</option>
+              <option value="workshop">Workshop</option>
+              <option value="sports">Sports</option>
+              <option value="networking">Networking</option>
+              <option value="festival">Festival</option>
+              <option value="meetup">Meetup</option>
+              <option value="exhibition">Exhibition</option>
+              <option value="screening">Screening</option>
+              <option value="webinar">Webinar</option>
               <option value="others">Others</option>
             </select>
-            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={20} />
+            <ChevronDown
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+              size={20}
+            />
           </div>
         </div>
         <div className="space-y-2 relative">
-          <label className="text-sm font-bold text-slate-900">Event Category <span className="text-[#DB2F40]">*</span></label>
+          <label className="text-sm font-bold text-slate-900">
+            Event Category <span className="text-[#DB2F40]">*</span>
+          </label>
           <div className="relative">
-            <select value={form.eventCategory} onChange={(e) => update("eventCategory", e.target.value)} className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white text-slate-600">
+            <select
+              value={form.eventCategory}
+              onChange={(e) => update("eventCategory", e.target.value)}
+              className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white text-slate-600"
+            >
               <option value="">Select Category</option>
               <option value="business">Business</option>
               <option value="music">Music</option>
               <option value="entertainment">Entertainment</option>
-              <option value="education">Education</option>
               <option value="tech">Tech</option>
               <option value="arts">Arts</option>
               <option value="food">Food</option>
               <option value="sports">Sports</option>
+              <option value="education">Education</option>
+              <option value="fashion">Fashion</option>
+              <option value="health_wellness">Health & Wellness</option>
+              <option value="community">Community</option>
+              <option value="religious">Religious</option>
+              <option value="others">Others</option>
             </select>
-            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={20} />
+            <ChevronDown
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+              size={20}
+            />
           </div>
         </div>
       </div>
 
       <div className="space-y-3">
-        <label className="text-sm font-bold text-slate-900">Event Cover Image <span className="text-[#DB2F40]">*</span></label>
+        <label className="text-sm font-bold text-slate-900">
+          Event Cover Image <span className="text-[#DB2F40]">*</span>
+        </label>
         <label className="border-2 border-dashed border-slate-200 rounded-2xl h-64 flex flex-col items-center justify-center bg-slate-50/50 hover:bg-slate-50 transition-colors cursor-pointer group relative overflow-hidden">
-          <input type="file" accept="image/jpeg, image/png, image/jpg" className="hidden" onChange={handleImageChange} />
+          <input
+            type="file"
+            accept="image/jpeg, image/png, image/jpg"
+            className="hidden"
+            onChange={handleImageChange}
+          />
           {form.coverImagePreview ? (
             <>
-              <img src={form.coverImagePreview} alt="Cover Preview" className="absolute inset-0 w-full h-full object-cover" />
-              <button onClick={removeImage} className="absolute top-4 right-4 bg-white/90 p-2 rounded-full text-red-500 hover:bg-white hover:scale-110 transition-all shadow-md z-10"><X size={20} /></button>
+              <img
+                src={form.coverImagePreview}
+                alt="Cover Preview"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              <button
+                onClick={removeImage}
+                className="absolute top-4 right-4 bg-white/90 p-2 rounded-full text-red-500 hover:bg-white hover:scale-110 transition-all shadow-md z-10"
+              >
+                <X size={20} />
+              </button>
             </>
           ) : (
             <>
-              <div className="bg-white p-4 rounded-full shadow-sm mb-4 group-hover:scale-110 transition-transform"><Upload className="text-slate-400" size={24} /></div>
-              <h3 className="text-lg font-bold text-slate-900">Drop your files or click to upload</h3>
-              <p className="text-sm text-slate-400 mt-1">JPEG, PNG, JPG ≤ 10MB</p>
-              <div className="mt-6 px-6 py-2 border border-slate-300 rounded-lg text-xs font-bold text-slate-600 hover:bg-white transition-colors">Browse</div>
+              <div className="bg-white p-4 rounded-full shadow-sm mb-4 group-hover:scale-110 transition-transform">
+                <Upload className="text-slate-400" size={24} />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900">
+                Drop your files or click to upload
+              </h3>
+              <p className="text-sm text-slate-400 mt-1">
+                JPEG, PNG, JPG ≤ 10MB
+              </p>
+              <div className="mt-6 px-6 py-2 border border-slate-300 rounded-lg text-xs font-bold text-slate-600 hover:bg-white transition-colors">
+                Browse
+              </div>
             </>
           )}
         </label>
@@ -280,50 +499,115 @@ const Step1 = ({ form, update }) => {
 
 const Step2 = ({ form, update }) => (
   <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-    <h2 className="text-3xl font-bold text-slate-900 mb-2">Date, Time & Venue</h2>
-    <p className="text-slate-400 mb-10">Please enter the details correctly to create your event</p>
+    <h2 className="text-3xl font-bold text-slate-900 mb-2">
+      Date, Time & Venue
+    </h2>
+    <p className="text-slate-400 mb-10">
+      Please enter the details correctly to create your event
+    </p>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mb-8">
       <div className="space-y-2">
-        <label className="text-sm font-bold text-slate-900">Event Start Date <span className="text-[#DB2F40]">*</span></label>
+        <label className="text-sm font-bold text-slate-900">
+          Event Start Date <span className="text-[#DB2F40]">*</span>
+        </label>
         <div className="relative">
-          <input type="date" value={form.startDate} onChange={(e) => update("startDate", e.target.value)} className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white text-slate-700 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer" />
-          <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={20} />
+          <input
+            type="date"
+            value={form.startDate}
+            onChange={(e) => update("startDate", e.target.value)}
+            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white text-slate-700 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+          />
+          <Calendar
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+            size={20}
+          />
         </div>
       </div>
       <div className="space-y-2">
-        <label className="text-sm font-bold text-slate-900">Event Start Time <span className="text-[#DB2F40]">*</span></label>
+        <label className="text-sm font-bold text-slate-900">
+          Event Start Time <span className="text-[#DB2F40]">*</span>
+        </label>
         <div className="relative">
-          <input type="time" value={form.startTime} onChange={(e) => update("startTime", e.target.value)} className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white text-slate-700 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer" />
-          <Clock className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={20} />
+          <input
+            type="time"
+            value={form.startTime}
+            onChange={(e) => update("startTime", e.target.value)}
+            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white text-slate-700 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+          />
+          <Clock
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+            size={20}
+          />
         </div>
       </div>
       <div className="space-y-2">
-        <label className="text-sm font-bold text-slate-900">Event End Date <span className="text-[#DB2F40]">*</span></label>
+        <label className="text-sm font-bold text-slate-900">
+          Event End Date <span className="text-[#DB2F40]">*</span>
+        </label>
         <div className="relative">
-          <input type="date" value={form.endDate} onChange={(e) => update("endDate", e.target.value)} className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white text-slate-700 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer" />
-          <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={20} />
+          <input
+            type="date"
+            value={form.endDate}
+            onChange={(e) => update("endDate", e.target.value)}
+            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white text-slate-700 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+          />
+          <Calendar
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+            size={20}
+          />
         </div>
       </div>
       <div className="space-y-2">
-        <label className="text-sm font-bold text-slate-900">Event End Time <span className="text-[#DB2F40]">*</span></label>
+        <label className="text-sm font-bold text-slate-900">
+          Event End Time <span className="text-[#DB2F40]">*</span>
+        </label>
         <div className="relative">
-          <input type="time" value={form.endTime} onChange={(e) => update("endTime", e.target.value)} className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white text-slate-700 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer" />
-          <Clock className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={20} />
+          <input
+            type="time"
+            value={form.endTime}
+            onChange={(e) => update("endTime", e.target.value)}
+            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white text-slate-700 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+          />
+          <Clock
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+            size={20}
+          />
         </div>
       </div>
       <div className="space-y-2">
-        <label className="text-sm font-bold text-slate-900">Venue Name <span className="text-[#DB2F40]">*</span></label>
-        <input type="text" value={form.venueName} onChange={(e) => update("venueName", e.target.value)} placeholder="Enter venue name here" className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-400" />
+        <label className="text-sm font-bold text-slate-900">
+          Venue Name <span className="text-[#DB2F40]">*</span>
+        </label>
+        <input
+          type="text"
+          value={form.venueName}
+          onChange={(e) => update("venueName", e.target.value)}
+          placeholder="Enter venue name here"
+          className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-400"
+        />
       </div>
       <div className="space-y-2">
-        <label className="text-sm font-bold text-slate-900">Address <span className="text-[#DB2F40]">*</span></label>
-        <input type="text" value={form.address} onChange={(e) => update("address", e.target.value)} placeholder="Enter venue address here" className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-400" />
+        <label className="text-sm font-bold text-slate-900">
+          Address <span className="text-[#DB2F40]">*</span>
+        </label>
+        <input
+          type="text"
+          value={form.address}
+          onChange={(e) => update("address", e.target.value)}
+          placeholder="Enter venue address here"
+          className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-400"
+        />
       </div>
     </div>
     <div className="flex items-center gap-24 mt-8 pl-1">
       <span className="text-sm font-bold text-slate-900">Virtual Event</span>
-      <button onClick={() => update("isVirtual", !form.isVirtual)} className={`w-[46px] h-6 rounded-full transition-colors duration-300 border-2 flex items-center cursor-pointer ${form.isVirtual ? "bg-slate-900 border-slate-900 px-[2px]" : "bg-white border-slate-900 px-[2px]"}`}>
-        <div className={`w-[16px] h-[16px] rounded-full shadow-sm transform transition-transform duration-300 ${form.isVirtual ? "translate-x-5 bg-white" : "translate-x-0 bg-slate-900"}`} />
+      <button
+        onClick={() => update("isVirtual", !form.isVirtual)}
+        className={`w-[46px] h-6 rounded-full transition-colors duration-300 border-2 flex items-center cursor-pointer ${form.isVirtual ? "bg-slate-900 border-slate-900 px-[2px]" : "bg-white border-slate-900 px-[2px]"}`}
+      >
+        <div
+          className={`w-[16px] h-[16px] rounded-full shadow-sm transform transition-transform duration-300 ${form.isVirtual ? "translate-x-5 bg-white" : "translate-x-0 bg-slate-900"}`}
+        />
       </button>
     </div>
   </div>
@@ -331,16 +615,33 @@ const Step2 = ({ form, update }) => (
 
 const Step3 = ({ form, update }) => (
   <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-    <h2 className="text-3xl font-bold text-slate-900 mb-2">Ticketing & Access Type</h2>
-    <p className="text-slate-400 mb-10">Please enter the details correctly to create your event</p>
+    <h2 className="text-3xl font-bold text-slate-900 mb-2">
+      Ticketing & Access Type
+    </h2>
+    <p className="text-slate-400 mb-10">
+      Please enter the details correctly to create your event
+    </p>
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {["Open Access", "Invite Only", "Ticketed Event"].map((type) => {
-        const value = type === "Open Access" ? "open" : type === "Invite Only" ? "invite_only" : "ticketed";
+        const value =
+          type === "Open Access"
+            ? "open"
+            : type === "Invite Only"
+              ? "invite"
+              : "ticketed";
         const isSelected = form.accessType === value;
         return (
-          <div key={value} onClick={() => update("accessType", value)} className={`cursor-pointer rounded-xl border-2 p-6 flex items-center justify-center gap-3 transition-all h-24 ${isSelected ? "border-[#6B4EFF] bg-[#6B4EFF]/5 text-[#6B4EFF]" : "border-slate-200 text-slate-500 hover:border-[#6B4EFF]/50"}`}>
-            <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected ? "border-[#6B4EFF]" : "border-slate-300"}`}>
-              {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-[#6B4EFF]" />}
+          <div
+            key={value}
+            onClick={() => update("accessType", value)}
+            className={`cursor-pointer rounded-xl border-2 p-6 flex items-center justify-center gap-3 transition-all h-24 ${isSelected ? "border-[#6B4EFF] bg-[#6B4EFF]/5 text-[#6B4EFF]" : "border-slate-200 text-slate-500 hover:border-[#6B4EFF]/50"}`}
+          >
+            <div
+              className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected ? "border-[#6B4EFF]" : "border-slate-300"}`}
+            >
+              {isSelected && (
+                <div className="w-2.5 h-2.5 rounded-full bg-[#6B4EFF]" />
+              )}
             </div>
             <span className="font-medium">{type}</span>
           </div>
@@ -354,60 +655,131 @@ const Step4 = ({ form, update }) => {
   if (form.accessType === "ticketed") {
     return (
       <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-        <h2 className="text-3xl font-bold text-slate-900 mb-2">Create Event Ticket</h2>
-        <p className="text-slate-400 mb-10">How do you want guests to be invited</p>
+        <h2 className="text-3xl font-bold text-slate-900 mb-2">
+          Create Event Ticket
+        </h2>
+        <p className="text-slate-400 mb-10">
+          How do you want guests to be invited
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
           <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-900">Ticket Name <span className="text-[#DB2F40]">*</span></label>
-            <input type="text" value={form.ticketName} onChange={(e) => update("ticketName", e.target.value)} placeholder="Enter ticket name" className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-400" />
+            <label className="text-sm font-bold text-slate-900">
+              Ticket Name <span className="text-[#DB2F40]">*</span>
+            </label>
+            <input
+              type="text"
+              value={form.ticketName}
+              onChange={(e) => update("ticketName", e.target.value)}
+              placeholder="Enter ticket name"
+              className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-400"
+            />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-900">Price <span className="text-[#DB2F40]">*</span></label>
-            <input type="text" value={form.ticketPrice} onChange={(e) => update("ticketPrice", e.target.value)} placeholder="Enter price" className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-400" />
+            <label className="text-sm font-bold text-slate-900">
+              Price <span className="text-[#DB2F40]">*</span>
+            </label>
+            <input
+              type="text"
+              value={form.ticketPrice}
+              onChange={(e) => update("ticketPrice", e.target.value)}
+              placeholder="Enter price"
+              className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-400"
+            />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-900">Quantity <span className="text-[#DB2F40]">*</span></label>
-            <input type="number" value={form.ticketQuantity} onChange={(e) => update("ticketQuantity", e.target.value)} placeholder="Enter quantity" className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-400" />
+            <label className="text-sm font-bold text-slate-900">
+              Quantity <span className="text-[#DB2F40]">*</span>
+            </label>
+            <input
+              type="number"
+              value={form.ticketQuantity}
+              onChange={(e) => update("ticketQuantity", e.target.value)}
+              placeholder="Enter quantity"
+              className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-400"
+            />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-900">Description <span className="text-[#DB2F40]">*</span></label>
-            <input type="text" value={form.ticketDescription} onChange={(e) => update("ticketDescription", e.target.value)} placeholder="Enter ticket description" className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-400" />
+            <label className="text-sm font-bold text-slate-900">
+              Description <span className="text-[#DB2F40]">*</span>
+            </label>
+            <input
+              type="text"
+              value={form.ticketDescription}
+              onChange={(e) => update("ticketDescription", e.target.value)}
+              placeholder="Enter ticket description"
+              className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-400"
+            />
           </div>
         </div>
       </div>
     );
   }
 
-  if (form.accessType === "invite_only") {
+  if (form.accessType === "invite") {
     const [tab, setTab] = useState("upload");
     return (
       <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-        <h2 className="text-3xl font-bold text-slate-900 mb-2">Guest Management & RSVP</h2>
-        <p className="text-slate-400 mb-8">How do you want guests to be invited</p>
+        <h2 className="text-3xl font-bold text-slate-900 mb-2">
+          Guest Management & RSVP
+        </h2>
+        <p className="text-slate-400 mb-8">
+          How do you want guests to be invited
+        </p>
         <div className="flex justify-center border-b border-slate-200 mb-10 w-full max-w-md mx-auto">
-          <button onClick={() => setTab("upload")} className={`pb-3 px-8 font-bold text-sm transition-colors relative cursor-pointer ${tab === "upload" ? "text-slate-900" : "text-slate-400"}`}>
-            Upload File {tab === "upload" && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#6B4EFF]" />}
+          <button
+            onClick={() => setTab("upload")}
+            className={`pb-3 px-8 font-bold text-sm transition-colors relative cursor-pointer ${tab === "upload" ? "text-slate-900" : "text-slate-400"}`}
+          >
+            Upload File{" "}
+            {tab === "upload" && (
+              <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#6B4EFF]" />
+            )}
           </button>
-          <button onClick={() => setTab("manual")} className={`pb-3 px-8 font-bold text-sm transition-colors relative cursor-pointer ${tab === "manual" ? "text-slate-900" : "text-slate-400"}`}>
-            Add Manually {tab === "manual" && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#6B4EFF]" />}
+          <button
+            onClick={() => setTab("manual")}
+            className={`pb-3 px-8 font-bold text-sm transition-colors relative cursor-pointer ${tab === "manual" ? "text-slate-900" : "text-slate-400"}`}
+          >
+            Add Manually{" "}
+            {tab === "manual" && (
+              <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#6B4EFF]" />
+            )}
           </button>
         </div>
         {tab === "upload" ? (
           <div>
             <div className="flex justify-between items-center mb-4">
-              <span className="font-bold text-sm text-slate-900">Import Guest List <span className="font-normal text-slate-400">(must be according to our template)</span></span>
-              <button className="text-[#6B4EFF] text-xs font-bold border border-[#6B4EFF]/30 px-4 py-2 rounded-lg hover:bg-[#6B4EFF]/5 cursor-pointer">Download Template</button>
+              <span className="font-bold text-sm text-slate-900">
+                Import Guest List{" "}
+                <span className="font-normal text-slate-400">
+                  (must be according to our template)
+                </span>
+              </span>
+              <button className="text-[#6B4EFF] text-xs font-bold border border-[#6B4EFF]/30 px-4 py-2 rounded-lg hover:bg-[#6B4EFF]/5 cursor-pointer">
+                Download Template
+              </button>
             </div>
             <div className="border-2 border-dashed border-slate-200 rounded-2xl h-48 flex flex-col items-center justify-center bg-slate-50/50 hover:bg-slate-50 transition-colors cursor-pointer">
-              <h3 className="text-lg font-bold text-slate-900">Drop your files or click to upload</h3>
+              <h3 className="text-lg font-bold text-slate-900">
+                Drop your files or click to upload
+              </h3>
               <p className="text-sm text-slate-400 mt-1">CSV, Excel</p>
-              <button className="mt-4 px-6 py-2 border border-slate-300 rounded-lg text-xs font-bold text-slate-600 bg-white cursor-pointer">Browse</button>
+              <button className="mt-4 px-6 py-2 border border-slate-300 rounded-lg text-xs font-bold text-slate-600 bg-white cursor-pointer">
+                Browse
+              </button>
             </div>
           </div>
         ) : (
           <div className="flex gap-4 items-center">
-            <input type="text" value={form.manualGuestEmail} onChange={(e) => update("manualGuestEmail", e.target.value)} placeholder="Enter email here" className="flex-1 px-4 py-3 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-300" />
-            <button className="bg-[#6B4EFF] text-white px-8 py-3 rounded-xl font-bold shadow-md hover:shadow-lg cursor-pointer transition-all">Add Email</button>
+            <input
+              type="text"
+              value={form.manualGuestEmail}
+              onChange={(e) => update("manualGuestEmail", e.target.value)}
+              placeholder="Enter email here"
+              className="flex-1 px-4 py-3 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-300"
+            />
+            <button className="bg-[#6B4EFF] text-white px-8 py-3 rounded-xl font-bold shadow-md hover:shadow-lg cursor-pointer transition-all">
+              Add Email
+            </button>
           </div>
         )}
       </div>
@@ -420,29 +792,69 @@ const Step5 = ({ form, onEdit, onPublish, isSubmitting, error }) => (
   <div className="animate-in fade-in slide-in-from-right-4 duration-300">
     <h2 className="text-3xl font-bold text-slate-900 mb-2">Review & Publish</h2>
     <p className="text-slate-400 mb-10">Confirm all details.</p>
-    {error && <div className="mb-8 p-4 bg-red-50 text-red-600 border border-red-200 rounded-xl">{error}</div>}
+    {error && (
+      <div className="mb-8 p-4 bg-red-50 text-red-600 border border-red-200 rounded-xl">
+        {error}
+      </div>
+    )}
     <div className="grid grid-cols-1 md:grid-cols-3 gap-y-10 gap-x-4 mb-12">
       <ReviewItem label="Event Name" value={form.eventName} />
       <ReviewItem label="Event Description" value={form.eventDescription} />
       <ReviewItem label="Event Type" value={form.eventType} />
       <ReviewItem label="Event Category" value={form.eventCategory} />
-      <ReviewItem label="Event Start" value={form.startDate ? `${form.startDate} ${form.startTime && `at ${form.startTime}`}` : ''} />
-      <ReviewItem label="Event End" value={form.endDate ? `${form.endDate} ${form.endTime && `at ${form.endTime}`}` : ''} />
+      <ReviewItem
+        label="Event Start"
+        value={
+          form.startDate
+            ? `${form.startDate} ${form.startTime && `at ${form.startTime}`}`
+            : ""
+        }
+      />
+      <ReviewItem
+        label="Event End"
+        value={
+          form.endDate
+            ? `${form.endDate} ${form.endTime && `at ${form.endTime}`}`
+            : ""
+        }
+      />
       <ReviewItem label="Venue Name" value={form.venueName} />
-      <ReviewItem label="Access Type" value={form.accessType === "open" ? "Open Access" : form.accessType === "invite" ? "Invite Only" : "Ticketed"} />
+      <ReviewItem
+        label="Access Type"
+        value={
+          form.accessType === "open"
+            ? "Open Access"
+            : form.accessType === "invite"
+              ? "Invite Only"
+              : "Ticketed"
+        }
+      />
       {form.accessType === "ticketed" && (
         <>
           <ReviewItem label="Ticket Name" value={form.ticketName} />
           <ReviewItem label="Ticket Price" value={`₦${form.ticketPrice}`} />
           <ReviewItem label="Ticket Quantity" value={form.ticketQuantity} />
-          <ReviewItem label="Ticket Description" value={form.ticketDescription} />
+          <ReviewItem
+            label="Ticket Description"
+            value={form.ticketDescription}
+          />
         </>
       )}
       {form.accessType === "invite" && <ReviewItem label="RSVPs" value="300" />}
     </div>
     <div className="flex gap-4">
-      <button onClick={onEdit} disabled={isSubmitting} className="flex-1 py-4 border border-[#6B4EFF] text-[#6B4EFF] font-bold rounded-xl hover:bg-[#6B4EFF]/5 transition-colors cursor-pointer disabled:opacity-50">Edit</button>
-      <button onClick={onPublish} disabled={isSubmitting} className="flex-1 py-4 flex justify-center items-center gap-2 bg-[#6B4EFF] text-white font-bold rounded-xl hover:shadow-lg hover:bg-[#583DD9] transition-all cursor-pointer disabled:bg-[#6B4EFF]/70">
+      <button
+        onClick={onEdit}
+        disabled={isSubmitting}
+        className="flex-1 py-4 border border-[#6B4EFF] text-[#6B4EFF] font-bold rounded-xl hover:bg-[#6B4EFF]/5 transition-colors cursor-pointer disabled:opacity-50"
+      >
+        Edit
+      </button>
+      <button
+        onClick={onPublish}
+        disabled={isSubmitting}
+        className="flex-1 py-4 flex justify-center items-center gap-2 bg-[#6B4EFF] text-white font-bold rounded-xl hover:shadow-lg hover:bg-[#583DD9] transition-all cursor-pointer disabled:bg-[#6B4EFF]/70"
+      >
         {isSubmitting && <Loader2 className="animate-spin" size={20} />}
         {isSubmitting ? "Publishing..." : "Publish Event"}
       </button>
@@ -453,7 +865,9 @@ const Step5 = ({ form, onEdit, onPublish, isSubmitting, error }) => (
 const ReviewItem = ({ label, value }) => (
   <div>
     <h4 className="text-slate-400 text-sm font-medium mb-1">{label}</h4>
-    <p className="text-lg font-bold text-slate-900 break-words">{value || "-"}</p>
+    <p className="text-lg font-bold text-slate-900 break-words">
+      {value || "-"}
+    </p>
   </div>
 );
 
