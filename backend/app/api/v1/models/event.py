@@ -46,6 +46,7 @@ class EventType(str, enum.Enum): # Format of the event( How it's structured)
     exhibition = "exhibition"
     screening = "screening"
     webinar = "webinar"
+    wedding = "wedding"
 
 
 
