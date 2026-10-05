@@ -41,21 +41,16 @@ const CreateEvent = () => {
     // Step 3
     accessType: "",
 
-    // Step 4
+    // Step 4 (Conditional)
     ticketName: "",
     ticketPrice: "",
     ticketQuantity: "",
     ticketDescription: "",
-    guestListFile: null,
 
     // Step 4 (Invite Only)
-    guestListName: "",
-    rsvpDeadline: "",
-    maxCapacity: "",
-    allowPlusOne: false,
-
-    // Manual Guest Add
+    guestListFile: null,
     manualGuestEmail: "",
+    guestEmails: [], // Array to hold multiple emails before publishing
   });
 
   const updateForm = (field, value) => {
@@ -101,10 +96,9 @@ const CreateEvent = () => {
             imageFormData,
             {
               headers: { "Content-Type": "multipart/form-data" },
-            },
+            }
           );
 
-          // extract image URL from response, with fallback to "string" if not present
           finalImageUrl =
             uploadRes.data?.cover_image_url ||
             uploadRes.data?.url ||
@@ -112,14 +106,12 @@ const CreateEvent = () => {
             "string";
         } catch (uploadErr) {
           console.error("Cover image upload failed:", uploadErr);
-          // Optionally halt submission here, but proceeding with fallback ensures form works if image endpoint is down
         }
       }
 
       let eventId = createdEventId;
 
       // 2. WIZARD FLOW
-
       // STEP 1
       if (!eventId) {
         const step1Payload = {
@@ -135,7 +127,6 @@ const CreateEvent = () => {
       }
 
       // STEP 2: Date & Location
-      // date & time formatting
       const formattedStartTime = `${formData.startTime}:00.000Z`;
       const formattedEndTime = formData.endTime
         ? `${formData.endTime}:00.000Z`
@@ -178,6 +169,43 @@ const CreateEvent = () => {
       // STEP 5: Publish the Event
       await api.post(`/events/wizard/${eventId}/publish`);
 
+      // STEP 4 (Invite only)
+      if (formData.accessType === "invite_only") {
+        try {
+          if (formData.guestListFile) {
+            // File Upload Bulk Import from file
+            const fileData = new FormData();
+            fileData.append("file", formData.guestListFile);
+            await api.post(`/guests/${eventId}/import`, fileData, {
+              headers: { "Content-Type": "multipart/form-data" },
+            });
+          } else if (formData.guestEmails.length === 1) {
+            // Single Guest API
+            const singleGuestPayload = {
+              email: formData.guestEmails[0],
+              first_name: "",
+              last_name: "",
+              phone_number: "",
+            };
+            await api.post(`/guests/${eventId}/invite`, singleGuestPayload);
+          } else if (formData.guestEmails.length > 1) {
+            // Bulk Manual Guest API
+            const bulkGuestPayload = {
+              guests: formData.guestEmails.map((email) => ({
+                email,
+                first_name: "",
+                last_name: "",
+                phone_number: "",
+              })),
+            };
+            await api.post(`/guests/${eventId}/invite/bulk`, bulkGuestPayload);
+          }
+        } catch (guestErr) {
+          console.error("Guest dispatch failed:", guestErr);
+          // Not failing the event creation if invites fail, but logging it.
+        }
+      }
+
       setIsPublished(true);
     } catch (err) {
       console.error("Publishing error:", err);
@@ -185,9 +213,8 @@ const CreateEvent = () => {
       let errorMessage =
         "Failed to publish the event. Please check your inputs.";
 
-      if (err.response && err.response.data && err.response.data.detail) {
+      if (err.response?.data?.detail) {
         const detail = err.response.data.detail;
-
         if (typeof detail === "string") {
           errorMessage = detail;
         } else if (Array.isArray(detail)) {
@@ -201,7 +228,6 @@ const CreateEvent = () => {
             .join(" | ");
         }
       }
-
       setSubmitError(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -212,7 +238,6 @@ const CreateEvent = () => {
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] px-6 lg:px-10 font-sans text-slate-800 font-poppins relative">
-      {/* SUCCESS MODAL POPUP */}
       {isPublished && (
         <FeedbackModal
           icon={SuccessIcon}
@@ -337,7 +362,7 @@ const CreateEvent = () => {
   );
 };
 
-/* SUB-COMPONENTS (STEPS 1-5) */
+/* SUB-COMPONENTS */
 const Step1 = ({ form, update }) => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -345,12 +370,6 @@ const Step1 = ({ form, update }) => {
       update("coverImage", file);
       update("coverImagePreview", URL.createObjectURL(file));
     }
-  };
-
-  const removeImage = (e) => {
-    e.preventDefault();
-    update("coverImage", null);
-    update("coverImagePreview", null);
   };
 
   return (
@@ -365,26 +384,26 @@ const Step1 = ({ form, update }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         <div className="space-y-2">
           <label className="text-sm font-bold text-slate-900">
-            Event Name <span className="text-[#DB2F40]">*</span>
+            Event Name *
           </label>
           <input
             type="text"
             value={form.eventName}
             onChange={(e) => update("eventName", e.target.value)}
             placeholder="e.g Tech Conference 2025"
-            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none transition-all placeholder:text-slate-400"
+            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] outline-none"
           />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-bold text-slate-900">
-            Event Description <span className="text-[#DB2F40]">*</span>
+            Event Description *
           </label>
           <input
             type="text"
             value={form.eventDescription}
             onChange={(e) => update("eventDescription", e.target.value)}
             placeholder="Tell attendees what the event is about"
-            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none transition-all placeholder:text-slate-400"
+            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] outline-none"
           />
         </div>
         <div className="space-y-2 relative">
@@ -393,7 +412,7 @@ const Step1 = ({ form, update }) => {
             <select
               value={form.eventType}
               onChange={(e) => update("eventType", e.target.value)}
-              className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white text-slate-600"
+              className="w-full px-4 py-3.5 rounded-xl border border-slate-200 appearance-none bg-white"
             >
               <option value="">Select Type</option>
               <option value="conference">Conference</option>
@@ -409,7 +428,7 @@ const Step1 = ({ form, update }) => {
               <option value="exhibition">Exhibition</option>
               <option value="screening">Screening</option>
               <option value="webinar">Webinar</option>
-              <option value="others">Others</option>
+              <option value="other">Other</option>
             </select>
             <ChevronDown
               className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
@@ -419,13 +438,13 @@ const Step1 = ({ form, update }) => {
         </div>
         <div className="space-y-2 relative">
           <label className="text-sm font-bold text-slate-900">
-            Event Category <span className="text-[#DB2F40]">*</span>
+            Event Category *
           </label>
           <div className="relative">
             <select
               value={form.eventCategory}
               onChange={(e) => update("eventCategory", e.target.value)}
-              className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white text-slate-600"
+              className="w-full px-4 py-3.5 rounded-xl border border-slate-200 appearance-none bg-white"
             >
               <option value="">Select Category</option>
               <option value="business">Business</option>
@@ -440,7 +459,7 @@ const Step1 = ({ form, update }) => {
               <option value="health_wellness">Health & Wellness</option>
               <option value="community">Community</option>
               <option value="religious">Religious</option>
-              <option value="others">Others</option>
+              <option value="other">Other</option>
             </select>
             <ChevronDown
               className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
@@ -452,12 +471,12 @@ const Step1 = ({ form, update }) => {
 
       <div className="space-y-3">
         <label className="text-sm font-bold text-slate-900">
-          Event Cover Image <span className="text-[#DB2F40]">*</span>
+          Event Cover Image *
         </label>
-        <label className="border-2 border-dashed border-slate-200 rounded-2xl h-64 flex flex-col items-center justify-center bg-slate-50/50 hover:bg-slate-50 transition-colors cursor-pointer group relative overflow-hidden">
+        <label className="border-2 border-dashed border-slate-200 rounded-2xl h-64 flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 cursor-pointer group relative overflow-hidden">
           <input
             type="file"
-            accept="image/jpeg, image/png, image/jpg"
+            accept="image/*"
             className="hidden"
             onChange={handleImageChange}
           />
@@ -465,30 +484,28 @@ const Step1 = ({ form, update }) => {
             <>
               <img
                 src={form.coverImagePreview}
-                alt="Cover Preview"
+                alt="Preview"
                 className="absolute inset-0 w-full h-full object-cover"
               />
               <button
-                onClick={removeImage}
-                className="absolute top-4 right-4 bg-white/90 p-2 rounded-full text-red-500 hover:bg-white hover:scale-110 transition-all shadow-md z-10"
+                onClick={(e) => {
+                  e.preventDefault();
+                  update("coverImage", null);
+                  update("coverImagePreview", null);
+                }}
+                className="absolute top-4 right-4 bg-white/90 p-2 rounded-full text-red-500 z-10"
               >
                 <X size={20} />
               </button>
             </>
           ) : (
             <>
-              <div className="bg-white p-4 rounded-full shadow-sm mb-4 group-hover:scale-110 transition-transform">
+              <div className="bg-white p-4 rounded-full shadow-sm mb-4">
                 <Upload className="text-slate-400" size={24} />
               </div>
-              <h3 className="text-lg font-bold text-slate-900">
+              <h3 className="text-lg font-bold">
                 Drop your files or click to upload
               </h3>
-              <p className="text-sm text-slate-400 mt-1">
-                JPEG, PNG, JPG ≤ 10MB
-              </p>
-              <div className="mt-6 px-6 py-2 border border-slate-300 rounded-lg text-xs font-bold text-slate-600 hover:bg-white transition-colors">
-                Browse
-              </div>
             </>
           )}
         </label>
@@ -502,100 +519,67 @@ const Step2 = ({ form, update }) => (
     <h2 className="text-3xl font-bold text-slate-900 mb-2">
       Date, Time & Venue
     </h2>
-    <p className="text-slate-400 mb-10">
-      Please enter the details correctly to create your event
-    </p>
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mb-8 mt-6">
       <div className="space-y-2">
         <label className="text-sm font-bold text-slate-900">
-          Event Start Date <span className="text-[#DB2F40]">*</span>
-        </label>
-        <div className="relative">
-          <input
-            type="date"
-            value={form.startDate}
-            onChange={(e) => update("startDate", e.target.value)}
-            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white text-slate-700 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-          />
-          <Calendar
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-            size={20}
-          />
-        </div>
-      </div>
-      <div className="space-y-2">
-        <label className="text-sm font-bold text-slate-900">
-          Event Start Time <span className="text-[#DB2F40]">*</span>
-        </label>
-        <div className="relative">
-          <input
-            type="time"
-            value={form.startTime}
-            onChange={(e) => update("startTime", e.target.value)}
-            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white text-slate-700 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-          />
-          <Clock
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-            size={20}
-          />
-        </div>
-      </div>
-      <div className="space-y-2">
-        <label className="text-sm font-bold text-slate-900">
-          Event End Date <span className="text-[#DB2F40]">*</span>
-        </label>
-        <div className="relative">
-          <input
-            type="date"
-            value={form.endDate}
-            onChange={(e) => update("endDate", e.target.value)}
-            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white text-slate-700 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-          />
-          <Calendar
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-            size={20}
-          />
-        </div>
-      </div>
-      <div className="space-y-2">
-        <label className="text-sm font-bold text-slate-900">
-          Event End Time <span className="text-[#DB2F40]">*</span>
-        </label>
-        <div className="relative">
-          <input
-            type="time"
-            value={form.endTime}
-            onChange={(e) => update("endTime", e.target.value)}
-            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none appearance-none bg-white text-slate-700 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-          />
-          <Clock
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-            size={20}
-          />
-        </div>
-      </div>
-      <div className="space-y-2">
-        <label className="text-sm font-bold text-slate-900">
-          Venue Name <span className="text-[#DB2F40]">*</span>
+          Event Start Date *
         </label>
         <input
-          type="text"
-          value={form.venueName}
-          onChange={(e) => update("venueName", e.target.value)}
-          placeholder="Enter venue name here"
-          className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-400"
+          type="date"
+          value={form.startDate}
+          onChange={(e) => update("startDate", e.target.value)}
+          className="w-full px-4 py-3.5 rounded-xl border border-slate-200"
         />
       </div>
       <div className="space-y-2">
         <label className="text-sm font-bold text-slate-900">
-          Address <span className="text-[#DB2F40]">*</span>
+          Event Start Time *
         </label>
+        <input
+          type="time"
+          value={form.startTime}
+          onChange={(e) => update("startTime", e.target.value)}
+          className="w-full px-4 py-3.5 rounded-xl border border-slate-200"
+        />
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-bold text-slate-900">
+          Event End Date
+        </label>
+        <input
+          type="date"
+          value={form.endDate}
+          onChange={(e) => update("endDate", e.target.value)}
+          className="w-full px-4 py-3.5 rounded-xl border border-slate-200"
+        />
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-bold text-slate-900">
+          Event End Time
+        </label>
+        <input
+          type="time"
+          value={form.endTime}
+          onChange={(e) => update("endTime", e.target.value)}
+          className="w-full px-4 py-3.5 rounded-xl border border-slate-200"
+        />
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-bold text-slate-900">Venue Name</label>
+        <input
+          type="text"
+          value={form.venueName}
+          onChange={(e) => update("venueName", e.target.value)}
+          className="w-full px-4 py-3.5 rounded-xl border border-slate-200"
+        />
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-bold text-slate-900">Address</label>
         <input
           type="text"
           value={form.address}
           onChange={(e) => update("address", e.target.value)}
-          placeholder="Enter venue address here"
-          className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-400"
+          className="w-full px-4 py-3.5 rounded-xl border border-slate-200"
         />
       </div>
     </div>
@@ -603,10 +587,16 @@ const Step2 = ({ form, update }) => (
       <span className="text-sm font-bold text-slate-900">Virtual Event</span>
       <button
         onClick={() => update("isVirtual", !form.isVirtual)}
-        className={`w-[46px] h-6 rounded-full transition-colors duration-300 border-2 flex items-center cursor-pointer ${form.isVirtual ? "bg-slate-900 border-slate-900 px-[2px]" : "bg-white border-slate-900 px-[2px]"}`}
+        className={`w-[46px] h-6 rounded-full transition-colors duration-300 border-2 flex items-center cursor-pointer ${
+          form.isVirtual
+            ? "bg-slate-900 border-slate-900 px-[2px]"
+            : "bg-white border-slate-900 px-[2px]"
+        }`}
       >
         <div
-          className={`w-[16px] h-[16px] rounded-full shadow-sm transform transition-transform duration-300 ${form.isVirtual ? "translate-x-5 bg-white" : "translate-x-0 bg-slate-900"}`}
+          className={`w-[16px] h-[16px] rounded-full shadow-sm transform transition-transform duration-300 ${
+            form.isVirtual ? "translate-x-5 bg-white" : "translate-x-0 bg-slate-900"
+          }`}
         />
       </button>
     </div>
@@ -618,32 +608,33 @@ const Step3 = ({ form, update }) => (
     <h2 className="text-3xl font-bold text-slate-900 mb-2">
       Ticketing & Access Type
     </h2>
-    <p className="text-slate-400 mb-10">
-      Please enter the details correctly to create your event
-    </p>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {["Open Access", "Invite Only", "Ticketed Event"].map((type) => {
-        const value =
-          type === "Open Access"
-            ? "open"
-            : type === "Invite Only"
-              ? "invite"
-              : "ticketed";
-        const isSelected = form.accessType === value;
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+      {[
+        { label: "Open Access", val: "open" },
+        { label: "Invite Only", val: "invite_only" },
+        { label: "Ticketed Event", val: "ticketed" },
+      ].map((type) => {
+        const isSelected = form.accessType === type.val;
         return (
           <div
-            key={value}
-            onClick={() => update("accessType", value)}
-            className={`cursor-pointer rounded-xl border-2 p-6 flex items-center justify-center gap-3 transition-all h-24 ${isSelected ? "border-[#6B4EFF] bg-[#6B4EFF]/5 text-[#6B4EFF]" : "border-slate-200 text-slate-500 hover:border-[#6B4EFF]/50"}`}
+            key={type.val}
+            onClick={() => update("accessType", type.val)}
+            className={`cursor-pointer rounded-xl border-2 p-6 flex items-center justify-center gap-3 transition-all h-24 ${
+              isSelected
+                ? "border-[#6B4EFF] bg-[#6B4EFF]/5 text-[#6B4EFF]"
+                : "border-slate-200 text-slate-500 hover:border-[#6B4EFF]/50"
+            }`}
           >
             <div
-              className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected ? "border-[#6B4EFF]" : "border-slate-300"}`}
+              className={`w-5 h-5 rounded-full border flex items-center justify-center ${
+                isSelected ? "border-[#6B4EFF]" : "border-slate-300"
+              }`}
             >
               {isSelected && (
                 <div className="w-2.5 h-2.5 rounded-full bg-[#6B4EFF]" />
               )}
             </div>
-            <span className="font-medium">{type}</span>
+            <span className="font-medium">{type.label}</span>
           </div>
         );
       })}
@@ -652,62 +643,65 @@ const Step3 = ({ form, update }) => (
 );
 
 const Step4 = ({ form, update }) => {
+  const handleAddEmail = (e) => {
+    e.preventDefault();
+    if (form.manualGuestEmail && form.manualGuestEmail.includes("@")) {
+      update("guestEmails", [...form.guestEmails, form.manualGuestEmail]);
+      update("manualGuestEmail", "");
+    }
+  };
+
+  const removeEmail = (emailToRemove) => {
+    update(
+      "guestEmails",
+      form.guestEmails.filter((e) => e !== emailToRemove)
+    );
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      update("guestListFile", file);
+    }
+  };
+
+  const removeFile = (e) => {
+    e.preventDefault();
+    update("guestListFile", null);
+  };
+
   if (form.accessType === "ticketed") {
     return (
       <div className="animate-in fade-in slide-in-from-right-4 duration-300">
         <h2 className="text-3xl font-bold text-slate-900 mb-2">
           Create Event Ticket
         </h2>
-        <p className="text-slate-400 mb-10">
-          How do you want guests to be invited
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 mt-8">
           <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-900">
-              Ticket Name <span className="text-[#DB2F40]">*</span>
-            </label>
+            <label className="text-sm font-bold">Ticket Name *</label>
             <input
               type="text"
               value={form.ticketName}
               onChange={(e) => update("ticketName", e.target.value)}
-              placeholder="Enter ticket name"
-              className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-400"
+              className="w-full px-4 py-3.5 rounded-xl border border-slate-200"
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-900">
-              Price <span className="text-[#DB2F40]">*</span>
-            </label>
+            <label className="text-sm font-bold">Price *</label>
             <input
               type="text"
               value={form.ticketPrice}
               onChange={(e) => update("ticketPrice", e.target.value)}
-              placeholder="Enter price"
-              className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-400"
+              className="w-full px-4 py-3.5 rounded-xl border border-slate-200"
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-900">
-              Quantity <span className="text-[#DB2F40]">*</span>
-            </label>
+            <label className="text-sm font-bold">Quantity *</label>
             <input
               type="number"
               value={form.ticketQuantity}
               onChange={(e) => update("ticketQuantity", e.target.value)}
-              placeholder="Enter quantity"
-              className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-400"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-900">
-              Description <span className="text-[#DB2F40]">*</span>
-            </label>
-            <input
-              type="text"
-              value={form.ticketDescription}
-              onChange={(e) => update("ticketDescription", e.target.value)}
-              placeholder="Enter ticket description"
-              className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-400"
+              className="w-full px-4 py-3.5 rounded-xl border border-slate-200"
             />
           </div>
         </div>
@@ -715,38 +709,80 @@ const Step4 = ({ form, update }) => {
     );
   }
 
-  if (form.accessType === "invite") {
-    const [tab, setTab] = useState("upload");
+  if (form.accessType === "invite_only") {
+    const [tab, setTab] = useState("manual");
     return (
       <div className="animate-in fade-in slide-in-from-right-4 duration-300">
         <h2 className="text-3xl font-bold text-slate-900 mb-2">
-          Guest Management & RSVP
+          Guest Management
         </h2>
-        <p className="text-slate-400 mb-8">
-          How do you want guests to be invited
-        </p>
-        <div className="flex justify-center border-b border-slate-200 mb-10 w-full max-w-md mx-auto">
-          <button
-            onClick={() => setTab("upload")}
-            className={`pb-3 px-8 font-bold text-sm transition-colors relative cursor-pointer ${tab === "upload" ? "text-slate-900" : "text-slate-400"}`}
-          >
-            Upload File{" "}
-            {tab === "upload" && (
-              <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#6B4EFF]" />
-            )}
-          </button>
+        <div className="flex justify-center border-b border-slate-200 mb-10 w-full max-w-md mx-auto mt-6">
           <button
             onClick={() => setTab("manual")}
-            className={`pb-3 px-8 font-bold text-sm transition-colors relative cursor-pointer ${tab === "manual" ? "text-slate-900" : "text-slate-400"}`}
+            className={`pb-3 px-8 font-bold text-sm transition-colors relative cursor-pointer ${
+              tab === "manual" ? "text-slate-900" : "text-slate-400"
+            }`}
           >
             Add Manually{" "}
             {tab === "manual" && (
               <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#6B4EFF]" />
             )}
           </button>
+          <button
+            onClick={() => setTab("upload")}
+            className={`pb-3 px-8 font-bold text-sm transition-colors relative cursor-pointer ${
+              tab === "upload" ? "text-slate-900" : "text-slate-400"
+            }`}
+          >
+            Upload File{" "}
+            {tab === "upload" && (
+              <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#6B4EFF]" />
+            )}
+          </button>
         </div>
-        {tab === "upload" ? (
-          <div>
+
+        {tab === "manual" && (
+          <div className="flex flex-col gap-4">
+            <div className="flex gap-4 items-center">
+              <input
+                type="email"
+                value={form.manualGuestEmail}
+                onChange={(e) => update("manualGuestEmail", e.target.value)}
+                placeholder="Enter guest email here"
+                className="flex-1 px-4 py-3 rounded-xl border border-slate-200 outline-none"
+              />
+              <button
+                onClick={handleAddEmail}
+                className="bg-[#6B4EFF] text-white px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all cursor-pointer"
+              >
+                Add Email
+              </button>
+            </div>
+
+            {/* Show added emails */}
+            {form.guestEmails.length > 0 && (
+              <div className="mt-4 p-4 border border-slate-100 rounded-xl bg-slate-50 flex flex-wrap gap-2">
+                {form.guestEmails.map((email) => (
+                  <span
+                    key={email}
+                    className="bg-white border border-slate-200 text-xs px-3 py-1.5 rounded-full flex items-center gap-2"
+                  >
+                    {email}{" "}
+                    <button
+                      onClick={() => removeEmail(email)}
+                      className="text-slate-400 hover:text-red-500"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab === "upload" && (
+          <div className="flex flex-col gap-4">
             <div className="flex justify-between items-center mb-4">
               <span className="font-bold text-sm text-slate-900">
                 Import Guest List{" "}
@@ -758,28 +794,27 @@ const Step4 = ({ form, update }) => {
                 Download Template
               </button>
             </div>
-            <div className="border-2 border-dashed border-slate-200 rounded-2xl h-48 flex flex-col items-center justify-center bg-slate-50/50 hover:bg-slate-50 transition-colors cursor-pointer">
-              <h3 className="text-lg font-bold text-slate-900">
-                Drop your files or click to upload
-              </h3>
-              <p className="text-sm text-slate-400 mt-1">CSV, Excel</p>
-              <button className="mt-4 px-6 py-2 border border-slate-300 rounded-lg text-xs font-bold text-slate-600 bg-white cursor-pointer">
-                Browse
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="flex gap-4 items-center">
-            <input
-              type="text"
-              value={form.manualGuestEmail}
-              onChange={(e) => update("manualGuestEmail", e.target.value)}
-              placeholder="Enter email here"
-              className="flex-1 px-4 py-3 rounded-xl border border-slate-200 focus:border-[#6B4EFF] focus:ring-1 focus:ring-[#6B4EFF] outline-none placeholder:text-slate-300"
-            />
-            <button className="bg-[#6B4EFF] text-white px-8 py-3 rounded-xl font-bold shadow-md hover:shadow-lg cursor-pointer transition-all">
-              Add Email
-            </button>
+            
+            <label className="border-2 border-dashed border-slate-200 rounded-2xl h-48 flex flex-col items-center justify-center bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors relative overflow-hidden">
+              <input 
+                type="file" 
+                accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" 
+                className="hidden" 
+                onChange={handleFileUpload} 
+              />
+              {form.guestListFile ? (
+                <div className="flex flex-col items-center">
+                  <span className="text-sm font-semibold text-slate-700">{form.guestListFile.name}</span>
+                  <button onClick={removeFile} className="mt-3 text-xs text-red-500 font-semibold hover:underline">Remove File</button>
+                </div>
+              ) : (
+                <>
+                  <h3 className="text-lg font-bold text-slate-900">Drop your files or click to upload</h3>
+                  <p className="text-sm text-slate-400 mt-1">CSV, Excel</p>
+                  <div className="mt-4 px-6 py-2 border border-slate-300 rounded-lg text-xs font-bold text-slate-600 bg-white cursor-pointer">Browse</div>
+                </>
+              )}
+            </label>
           </div>
         )}
       </div>
@@ -788,79 +823,66 @@ const Step4 = ({ form, update }) => {
   return null;
 };
 
-const Step5 = ({ form, onEdit, onPublish, isSubmitting, error }) => (
-  <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-    <h2 className="text-3xl font-bold text-slate-900 mb-2">Review & Publish</h2>
-    <p className="text-slate-400 mb-10">Confirm all details.</p>
-    {error && (
-      <div className="mb-8 p-4 bg-red-50 text-red-600 border border-red-200 rounded-xl">
-        {error}
-      </div>
-    )}
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-y-10 gap-x-4 mb-12">
-      <ReviewItem label="Event Name" value={form.eventName} />
-      <ReviewItem label="Event Description" value={form.eventDescription} />
-      <ReviewItem label="Event Type" value={form.eventType} />
-      <ReviewItem label="Event Category" value={form.eventCategory} />
-      <ReviewItem
-        label="Event Start"
-        value={
-          form.startDate
-            ? `${form.startDate} ${form.startTime && `at ${form.startTime}`}`
-            : ""
-        }
-      />
-      <ReviewItem
-        label="Event End"
-        value={
-          form.endDate
-            ? `${form.endDate} ${form.endTime && `at ${form.endTime}`}`
-            : ""
-        }
-      />
-      <ReviewItem label="Venue Name" value={form.venueName} />
-      <ReviewItem
-        label="Access Type"
-        value={
-          form.accessType === "open"
-            ? "Open Access"
-            : form.accessType === "invite"
+const Step5 = ({ form, onEdit, onPublish, isSubmitting, error }) => {
+  // Determine guest review label based on input method
+  let guestCountText = "No guests added";
+  if (form.guestListFile) {
+    guestCountText = `File attached: ${form.guestListFile.name}`;
+  } else if (form.guestEmails.length > 0) {
+    guestCountText = `${form.guestEmails.length} emails added manually`;
+  }
+
+  return (
+    <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+      <h2 className="text-3xl font-bold text-slate-900 mb-2">Review & Publish</h2>
+      {error && (
+        <div className="mb-8 p-4 bg-red-50 text-red-600 border border-red-200 rounded-xl">
+          {error}
+        </div>
+      )}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-y-10 gap-x-4 mb-12 mt-8">
+        <ReviewItem label="Event Name" value={form.eventName} />
+        <ReviewItem label="Event Category" value={form.eventCategory} />
+        <ReviewItem
+          label="Access Type"
+          value={
+            form.accessType === "open"
+              ? "Open Access"
+              : form.accessType === "invite_only"
               ? "Invite Only"
               : "Ticketed"
-        }
-      />
-      {form.accessType === "ticketed" && (
-        <>
-          <ReviewItem label="Ticket Name" value={form.ticketName} />
-          <ReviewItem label="Ticket Price" value={`₦${form.ticketPrice}`} />
-          <ReviewItem label="Ticket Quantity" value={form.ticketQuantity} />
-          <ReviewItem
-            label="Ticket Description"
-            value={form.ticketDescription}
-          />
-        </>
-      )}
-      {form.accessType === "invite" && <ReviewItem label="RSVPs" value="300" />}
+          }
+        />
+        <ReviewItem
+          label="Start Date & Time"
+          value={form.startDate ? `${form.startDate} ${form.startTime}` : ""}
+        />
+        <ReviewItem label="Venue Name" value={form.venueName} />
+
+        {form.accessType === "invite_only" && (
+          <ReviewItem label="Guests to Invite" value={guestCountText} />
+        )}
+      </div>
+      <div className="flex gap-4">
+        <button
+          onClick={onEdit}
+          disabled={isSubmitting}
+          className="flex-1 py-4 border border-[#6B4EFF] text-[#6B4EFF] font-bold rounded-xl hover:bg-[#6B4EFF]/5 transition-colors cursor-pointer disabled:opacity-50"
+        >
+          Edit
+        </button>
+        <button
+          onClick={onPublish}
+          disabled={isSubmitting}
+          className="flex-1 py-4 flex justify-center items-center gap-2 bg-[#6B4EFF] text-white font-bold rounded-xl hover:shadow-lg hover:bg-[#583DD9] transition-all cursor-pointer disabled:bg-[#6B4EFF]/70"
+        >
+          {isSubmitting && <Loader2 className="animate-spin" size={20} />}
+          {isSubmitting ? "Publishing..." : "Publish Event"}
+        </button>
+      </div>
     </div>
-    <div className="flex gap-4">
-      <button
-        onClick={onEdit}
-        disabled={isSubmitting}
-        className="flex-1 py-4 border border-[#6B4EFF] text-[#6B4EFF] font-bold rounded-xl hover:bg-[#6B4EFF]/5 transition-colors cursor-pointer disabled:opacity-50"
-      >
-        Edit
-      </button>
-      <button
-        onClick={onPublish}
-        disabled={isSubmitting}
-        className="flex-1 py-4 flex justify-center items-center gap-2 bg-[#6B4EFF] text-white font-bold rounded-xl hover:shadow-lg hover:bg-[#583DD9] transition-all cursor-pointer disabled:bg-[#6B4EFF]/70"
-      >
-        {isSubmitting && <Loader2 className="animate-spin" size={20} />}
-        {isSubmitting ? "Publishing..." : "Publish Event"}
-      </button>
-    </div>
-  </div>
-);
+  );
+};
 
 const ReviewItem = ({ label, value }) => (
   <div>
