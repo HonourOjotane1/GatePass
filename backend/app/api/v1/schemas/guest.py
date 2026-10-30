@@ -65,7 +65,7 @@ class GuestResponse(BaseModel):
     event_id: str
     first_name: Optional[str] = None
     last_name: Optional[str] = None
-    email: Optional[str] = None
+    email: Optional[EmailStr] = None
     phone_number: Optional[str] = None
     rsvp_status: RSVPStatus
     plus_one_allowed: bool
