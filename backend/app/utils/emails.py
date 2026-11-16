@@ -1,22 +1,44 @@
 import smtplib
 from email.mime.text import MIMEText
 import os
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
 
-
 def _send_email(to: str, subject: str, body: str):
-    """Shared SMTP sender used by all email functions."""
-    msg = MIMEText(body)
-    msg["Subject"] = subject
-    msg["From"] = os.getenv("MAIL_FROM")
-    msg["To"] = to
+    """Send via Brevo's HTTP API (SMTP is blocked on Render)."""
+    api_key = os.getenv("BREVO_API_KEY")
+    sender = os.getenv("MAIL_FROM")
+    if not api_key or not sender:
+        raise RuntimeError("BREVO_API_KEY and MAIL_FROM is not set.")
 
-    with smtplib.SMTP(os.getenv("MAIL_SERVER"), int(os.getenv("MAIL_PORT"))) as server:
-        server.starttls()
-        server.login(os.getenv("MAIL_USERNAME"), os.getenv("MAIL_PASSWORD"))
-        server.send_message(msg)
+    response = requests.post(
+        "https://api.brevo.com/v3/smtp/email",
+        headers={ "api-key": api_key, "Content-Type": "application/json" },
+        json={
+            "sender": { "name": "GatePass", "email": sender },
+            "to": [{ "email": to }],
+            "subject": subject,
+            "textContent": body
+        },
+        timeout=10
+    )
+    if not response.ok:
+         # Brevo's error body says exactly what's wrong (unverified sender, bad key, etc.)
+        raise RuntimeError(f"Brevo error: {response.status_code} - {response.text}")
+
+# def _send_email(to: str, subject: str, body: str):
+#     """Shared SMTP sender used by all email functions."""
+#     msg = MIMEText(body)
+#     msg["Subject"] = subject
+#     msg["From"] = os.getenv("MAIL_FROM")
+#     msg["To"] = to
+
+#     with smtplib.SMTP(os.getenv("MAIL_SERVER"), int(os.getenv("MAIL_PORT"))) as server:
+#         server.starttls()
+#         server.login(os.getenv("MAIL_USERNAME"), os.getenv("MAIL_PASSWORD"))
+#         server.send_message(msg)
 
 
 # ── Auth emails ────────────────────────────────────────────────────────

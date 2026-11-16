@@ -9,7 +9,10 @@ from app.api.v1.schemas.guest import GuestInviteSingle, GuestInviteBulk, GuestUp
 from app.utils.emails import send_rsvp_invitation_email, send_rsvp_confirmation_email, send_waitlist_promotion_email
 from app.utils.sms import send_rsvp_invitation_sms, send_waitlist_promotion_sms
 import secrets
+import asyncio
 import os
+import logging
+logger = logging.getLogger(__name__)
 
 
 # ── Internal helpers ───────────────────────────────────────────────────
@@ -158,14 +161,23 @@ async def invite_guest(
     await db.refresh(guest)
 
     # send invitations
-    _dispatch_invite(
-        method=data.invite_method,
-        email=data.email,
-        phone=data.phone_number,
-        guest_name=guest_name,
-        event_name=event.event_name,
-        rsvp_link=rsvp_link
+    await asyncio.to_thread(
+        _dispatch_invite,
+        data.invite_method,
+        data.email,
+        data.phone_number,
+        guest_name,
+        event.event_name,
+        rsvp_link,
     )
+    # _dispatch_invite(
+    #     method=data.invite_method,
+    #     email=data.email,
+    #     phone=data.phone_number,
+    #     guest_name=guest_name,
+    #     event_name=event.event_name,
+    #     rsvp_link=rsvp_link
+    # )
 
     return guest
 
@@ -176,7 +188,7 @@ def _dispatch_invite(method, email, phone, guest_name, event_name, rsvp_link):
         if method in (InviteMethod.email, InviteMethod.both) and email:
             send_rsvp_invitation_email(email, guest_name, event_name, rsvp_link)
     except Exception as e:
-        print(f"[EMAIL ERROR] {e}")
+        logger.exception("Email dispatch failed")
 
     try:
         if method in (InviteMethod.sms, InviteMethod.both) and phone:
@@ -263,7 +275,7 @@ async def respond_to_rsvp(db: AsyncSession, data: RSVPResponse) -> Guest:
                     event.event_name
                 )
             except Exception as e:
-                print(f"[EMAIL ERROR] {e}")
+                logger.exception("Email dispatch failed")
 
     elif data.status == RSVPStatus.declined:
         previous_status = guest.rsvp_status
@@ -312,7 +324,7 @@ async def _promote_from_waitlist(db: AsyncSession, event_id: str, event_name: st
         if next_guest.email:
             send_waitlist_promotion_email(next_guest.email, guest_name, event_name, rsvp_link)
     except Exception as e:
-        print(f"[EMAIL ERROR] {e}")
+        logger.exception("Email dispatch failed")
 
     try:
         if next_guest.phone_number:
